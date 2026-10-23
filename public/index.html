@@ -29,6 +29,22 @@
 
   .hidden { display: none !important; }
 
+  .top-bar {
+    width: 100%; max-width: 380px; display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 8px 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 4px;
+  }
+  .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; }
+  .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+  .status-text { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); text-align: center; flex: 1; }
+  
+  .chat-btn {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 6px 10px; font-family: inherit; font-weight: 900; font-size: 12px;
+    display: flex; align-items: center; gap: 6px; cursor: pointer;
+  }
+  .chat-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
   .my-code-panel {
     width: 100%; max-width: 380px; display: flex; align-items: center; gap: 12px;
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px;
@@ -94,38 +110,30 @@
   .sms-digit.green { background: var(--green); color: #000; box-shadow: 0 0 10px var(--green-glow); }
   .sms-digit.yellow { background: var(--yellow); color: #fff; box-shadow: 0 0 10px var(--yellow-glow); }
   .sms-digit.gray { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
-  .sms-hint { font-size: 12px; color: var(--muted); font-weight: 700; }
 
   .modal {
     position: fixed; inset: 0; background: rgba(9, 10, 15, 0.85); display: flex; align-items: center; justify-content: center; z-index: 400; backdrop-filter: blur(8px); transition: opacity 0.3s;
   }
   .modal-content { background: var(--panel); padding: 24px; border-radius: 20px; width: 90%; max-width: 340px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
   .modal-content h2 { margin: 0; font-size: 20px; text-align: center; font-weight: 900; }
-  .modal-content p { margin: 0; font-size: 13px; text-align: center; color: var(--muted); font-weight: 700; }
   
-  .modal-inputs { display: flex; gap: 8px; justify-content: center; }
-  .modal-inputs input { width: 100%; aspect-ratio: 1/1; background: rgba(0,0,0,0.3); border: 2px solid var(--line); border-radius: 10px; color: var(--text); font-size: 24px; font-weight: 900; text-align: center; font-family: inherit; outline: none; transition: border-color 0.2s; }
-  .modal-inputs input:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .auth-tabs { display: flex; gap: 8px; margin-bottom: 8px; }
+  .auth-tab { flex: 1; padding: 10px; text-align: center; background: rgba(0,0,0,0.3); border-radius: 8px; cursor: pointer; font-weight: 700; color: var(--muted); border: 1px solid transparent; }
+  .auth-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
   .auth-inputs { display: flex; flex-direction: column; gap: 10px; }
   .auth-inputs input { background: rgba(0,0,0,0.3); border: 2px solid var(--line); border-radius: 10px; padding: 12px; color: var(--text); font-size: 16px; font-weight: 700; font-family: inherit; outline: none; }
   .auth-inputs input:focus { border-color: var(--accent); }
+
+  .modal-inputs { display: flex; gap: 8px; justify-content: center; }
+  .modal-inputs input { width: 100%; aspect-ratio: 1/1; background: rgba(0,0,0,0.3); border: 2px solid var(--line); border-radius: 10px; color: var(--text); font-size: 24px; font-weight: 900; text-align: center; font-family: inherit; outline: none; }
+  .modal-inputs input:focus { border-color: var(--accent); }
 
   .modal-btns { display: flex; gap: 8px; margin-top: 8px; }
   .modal-btns button { flex: 1; padding: 14px 0; border-radius: 10px; font-weight: 900; cursor: pointer; border: none; font-family: inherit; font-size: 15px; transition: all 0.1s; }
   .modal-btns button:active { transform: scale(0.95); }
   .btn-start { background: var(--green); color: #000; box-shadow: 0 4px 15px var(--green-glow); }
   .btn-random { background: var(--line); color: var(--text); }
-
-  .top-bar { width: 100%; max-width: 380px; display: flex; justify-content: center; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin-bottom: 10px; }
-  .status-text { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); }
-  
-  /* Ожидание */
-  .loading-spinner {
-    border: 4px solid var(--line); border-top: 4px solid var(--accent); border-radius: 50%;
-    width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto;
-  }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -133,14 +141,17 @@
 <!-- ЭКРАН РЕГИСТРАЦИИ -->
 <div class="modal" id="auth-screen">
   <div class="modal-content">
-    <h2>Вход / Регистрация</h2>
-    <p>Введите ник (латиница, цифры, _ -) и пароль</p>
+    <h2>Добро пожаловать</h2>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Вход</div>
+      <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Регистрация</div>
+    </div>
     <div class="auth-inputs">
       <input type="text" id="reg-username" placeholder="Никнейм" maxlength="15">
       <input type="password" id="reg-password" placeholder="Пароль">
     </div>
     <div class="modal-btns">
-      <button class="btn-start" onclick="login()">Войти</button>
+      <button class="btn-start" onclick="submitAuth()">Войти</button>
     </div>
   </div>
 </div>
@@ -149,11 +160,10 @@
 <div class="modal hidden" id="code-screen">
   <div class="modal-content">
     <h2>Загадайте код</h2>
-    <p>Введите 6 цифр, которые будет угадывать соперник</p>
     <div class="modal-inputs" id="modal-inputs"></div>
     <div class="modal-btns">
       <button class="btn-random" onclick="randomizeModal()">Рандом</button>
-      <button class="btn-start" onclick="findGame()">Искать соперника</button>
+      <button class="btn-start" onclick="findGame()">Искать</button>
     </div>
   </div>
 </div>
@@ -162,8 +172,7 @@
 <div class="modal hidden" id="waiting-screen">
   <div class="modal-content" style="align-items: center;">
     <h2>Поиск соперника...</h2>
-    <div class="loading-spinner"></div>
-    <p>Ожидаем подключения второго игрока</p>
+    <div style="border: 4px solid var(--line); border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto;"></div>
   </div>
 </div>
 
@@ -171,7 +180,13 @@
 <div id="game-screen" class="hidden" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
   
   <div class="top-bar">
+    <button class="icon-btn" title="Настройки">
+      <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+    </button>
     <div class="status-text" id="status-text">ОЖИДАНИЕ...</div>
+    <button class="chat-btn">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> Чат
+    </button>
   </div>
 
   <div class="my-code-panel">
@@ -184,17 +199,14 @@
 
   <div class="board" id="board"></div>
   <div class="pad-container" id="pad-container"><div class="pad" id="pad"></div></div>
-
 </div>
 
-<!-- Всплывашка с результатом -->
 <div class="sms-notification" id="sms-notification">
   <div class="sms-header">
     <div class="sms-title" id="sms-title">Ход соперника</div>
     <div class="sms-time">Сейчас</div>
   </div>
   <div class="sms-digits" id="sms-digits"></div>
-  <div class="sms-hint">Нажмите, чтобы закрыть</div>
 </div>
 
 <script>
@@ -203,14 +215,13 @@
 const socket = io();
 const CODE_LEN = 6;
 
+let isLoginMode = true; // По умолчанию открыт Вход
 let currentUser = null;
 let mySecretCode = null;
 let roomId = null;
-let myId = socket.id;
 let currentTurn = null;
 let opponentName = "Соперник";
 
-// Состояние доски (только для UI)
 let locked = Array(CODE_LEN).fill(false);
 let lockedDigits = Array(CODE_LEN).fill(null);
 let input = Array(CODE_LEN).fill("");
@@ -234,13 +245,21 @@ const el = {
   smsNotif: document.getElementById("sms-notification"),
   smsDigits: document.getElementById("sms-digits"),
   smsTitle: document.getElementById("sms-title"),
-  modalInputs: document.getElementById("modal-inputs")
+  modalInputs: document.getElementById("modal-inputs"),
+  tabLogin: document.getElementById("tab-login"),
+  tabRegister: document.getElementById("tab-register")
 };
 
 const randDigit = () => Math.floor(Math.random() * 10).toString();
 
 /* ============ АВТОРИЗАЦИЯ ============ */
-function login() {
+function switchTab(mode) {
+  isLoginMode = (mode === 'login');
+  el.tabLogin.classList.toggle("active", isLoginMode);
+  el.tabRegister.classList.toggle("active", !isLoginMode);
+}
+
+function submitAuth() {
   const user = document.getElementById("reg-username").value.trim();
   const pass = document.getElementById("reg-password").value.trim();
 
@@ -253,7 +272,7 @@ function login() {
     return;
   }
 
-  socket.emit('register', { username: user, password: pass }, (res) => {
+  socket.emit('auth', { username: user, password: pass, isRegister: !isLoginMode }, (res) => {
     if (res.success) {
       currentUser = user;
       el.authScreen.classList.add("hidden");
@@ -295,7 +314,6 @@ function findGame() {
   mySecretCode = code;
   el.codeScreen.classList.add("hidden");
   el.waitingScreen.classList.remove("hidden");
-  
   socket.emit('find_game', { username: currentUser, code: mySecretCode });
 }
 
@@ -311,8 +329,10 @@ socket.on('game_start', (data) => {
   el.waitingScreen.classList.add("hidden");
   el.gameScreen.classList.remove("hidden");
   
-  renderMyCodeStatus(Array(CODE_LEN).fill("gray")); // Сброс статуса
+  renderMyCodeStatus(Array(CODE_LEN).fill("gray"));
   updateTurnUI();
+  renderBoard();
+  renderPad(); // Изначально рисуем клавиатуру
 });
 
 /* ============ ИГРА ============ */
@@ -366,16 +386,13 @@ function submitGuess() {
   if (currentTurn !== socket.id) return;
   const guess = input.map((d, i) => locked[i] ? lockedDigits[i] : d).join("");
   if (guess.length !== CODE_LEN || guess.includes("")) return;
-
   socket.emit('make_guess', { roomId, guess });
 }
 
 socket.on('guess_result', (data) => {
-  // Если ход сделал я
   if (data.player === socket.id) {
     lastGuess = data.guess;
     lastMarks = data.marks;
-    
     for (let i = 0; i < CODE_LEN; i++) {
       if (data.marks[i] === "green") {
         locked[i] = true;
@@ -389,9 +406,7 @@ socket.on('guess_result', (data) => {
     moveCursorNext();
     renderBoard();
     renderPad();
-  } 
-  // Если ход сделал соперник
-  else {
+  } else {
     showOpponentMove(data.guess, data.marks);
   }
 
@@ -404,127 +419,4 @@ function showOpponentMove(guess, marks) {
   el.smsDigits.innerHTML = "";
   guess.split("").forEach((d, i) => {
     const c = document.createElement("div");
-    c.className = "sms-digit " + marks[i];
-    c.textContent = d;
-    el.smsDigits.appendChild(c);
-  });
-  el.smsNotif.classList.add("show");
-  setTimeout(() => el.smsNotif.classList.remove("show"), 3000);
-}
-
-socket.on('game_over', (data) => {
-  if (data.winner === socket.id) {
-    alert("Вы победили! Соперник разгадал ваш код? Нет, вы разгадали его код!");
-  } else {
-    alert(`Вы проиграли. ${opponentName} угадал ваш код: ${data.code}`);
-  }
-  setTimeout(() => location.reload(), 3000);
-});
-
-/* ============ РЕНДЕР UI ============ */
-function renderMyCodeStatus(marks) {
-  el.myCodeDigits.innerHTML = "";
-  for (let i = 0; i < CODE_LEN; i++) {
-    const d = document.createElement("div");
-    d.className = "my-code-digit " + marks[i];
-    d.textContent = mySecretCode ? mySecretCode[i] : "-";
-    el.myCodeDigits.appendChild(d);
-  }
-}
-
-function renderBoard() {
-  el.board.innerHTML = "";
-  for (let i = 0; i < CODE_LEN; i++) {
-    const c = document.createElement("div");
-    c.className = "cell";
-    
-    if (locked[i]) {
-      c.classList.add("locked");
-      c.textContent = lockedDigits[i] ?? "";
-    } else if (input[i]) {
-      c.classList.add("filled");
-      c.textContent = input[i];
-    } else if (lastMarks[i] === "yellow" && lastGuess) {
-      c.classList.add("fade-yellow");
-      c.textContent = lastGuess[i];
-    } else if (lastMarks[i] === "gray") {
-      c.classList.add("fade-gray");
-      c.textContent = "•";
-    }
-
-    if (i === cursor && !locked[i]) c.classList.add("cursor");
-    el.board.appendChild(c);
-  }
-}
-
-function renderPad() {
-  el.pad.innerHTML = "";
-  if (currentTurn !== socket.id) return; // Блокируем клавиатуру, если не наш ход
-
-  const hints = {};
-  if (lastMarks && lastGuess) {
-    lastMarks.forEach((m, i) => {
-      if (m === "yellow") {
-        const d = lastGuess[i];
-        hints[d] = (hints[d] || 0) + 1;
-      }
-    });
-  }
-
-  const addBtn = (text, cls, fn, isDigit = false) => {
-    const b = document.createElement("button");
-    b.textContent = text;
-    if (cls) b.className = cls;
-    
-    if (isDigit) {
-      const isCursorEmpty = !locked[cursor] && !input[cursor];
-      if (isCursorEmpty) {
-          const isTriedInCursor = attempts.some(a => a.slot === cursor && a.digit === text);
-          if (isTriedInCursor) b.disabled = true;
-      }
-      if (!b.disabled && hints[text]) {
-        b.classList.add("hint-yellow");
-        b.setAttribute("data-hint", hints[text]);
-      }
-    }
-    b.addEventListener("click", () => { if(!b.disabled) fn(); });
-    el.pad.appendChild(b);
-    return b;
-  };
-
-  addBtn("1", "", () => putDigit("1"), true);
-  addBtn("2", "", () => putDigit("2"), true);
-  addBtn("3", "", () => putDigit("3"), true);
-  const subBtn = addBtn("✓", "btn-submit", submitGuess);
-  
-  addBtn("4", "", () => putDigit("4"), true);
-  addBtn("5", "", () => putDigit("5"), true);
-  addBtn("6", "", () => putDigit("6"), true);
-  addBtn("×", "btn-reset", clearInput);
-
-  addBtn("7", "", () => putDigit("7"), true);
-  addBtn("8", "", () => putDigit("8"), true);
-  addBtn("9", "", () => putDigit("9"), true);
-  addBtn("0", "", () => putDigit("0"), true);
-
-  const isFull = input.every((d, i) => locked[i] || d !== "");
-  subBtn.disabled = !isFull;
-}
-
-el.board.addEventListener("click", (e) => {
-  const cell = e.target.closest(".cell");
-  if (!cell || currentTurn !== socket.id) return;
-  const index = Array.from(el.board.children).indexOf(cell);
-  if (locked[index]) return;
-  if (input[index]) { input[index] = ""; cursor = index; }
-  else { cursor = index; }
-  renderBoard(); renderPad();
-});
-
-el.toggleCodeBtn.onclick = () => {
-  isCodeHidden = !isCodeHidden;
-  el.myCodeDigits.classList.toggle("hidden-code", isCodeHidden);
-};
-</script>
-</body>
-</html>
+    c.className = "sms-digit " + marks[i

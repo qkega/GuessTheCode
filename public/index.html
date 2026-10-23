@@ -6,433 +6,446 @@
 <title>Угадай код</title>
 <script src="/socket.io/socket.io.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
 
   :root {
-    --bg: #0b0e14; 
-    --panel: #151a24; 
-    --line: #232a3b;
+    --bg: #0f1115; 
+    --panel: rgba(26, 30, 43, 0.85); 
+    --line: #2a3042;
     --text: #ffffff; 
-    --muted: #6b7a99;
-    --green: #00d26a; 
-    --yellow: #ffb300; 
-    --red: #ff4757;
-    --accent: #4a7dff;
+    --muted: #8b93a5;
+    --green: #10b981; 
+    --green-inactive: #064e3b; 
+    --green-glow: rgba(16, 185, 129, 0.4);
+    --yellow: #f59e0b; 
+    --yellow-glow: rgba(245, 158, 11, 0.4);
+    --red: #ef4444;
+    --gray: #2a3042;
+    
+    --status-human: #06b6d4; 
+    --status-bot: #a855f7;   
+    --accent: #3b82f6;
   }
   
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; font-family: 'Nunito', sans-serif; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   
   body {
     margin: 0; height: 100vh; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 16px;
-    background: var(--bg); color: var(--text);
-    overflow: hidden; user-select: none; transition: filter 0.3s ease;
+    align-items: center; justify-content: center; gap: 8px; padding: 10px;
+    background: var(--bg); color: var(--text); font-family: 'Nunito', sans-serif;
+    overflow: hidden; user-select: none; transition: filter 0.5s ease;
   }
 
-  body.blur-active > *:not(.modal-overlay) { filter: blur(8px); pointer-events: none; }
+  body.blur-active > *:not(.chat-modal):not(.settings-modal):not(.game-over-screen):not(.modal):not(.menu-overlay) {
+    filter: blur(8px); pointer-events: none;
+  }
+
   .hidden { display: none !important; }
 
-  /* КНОПКИ И ПОЛЯ */
-  button { border: none; outline: none; cursor: pointer; font-weight: 800; transition: all 0.1s; }
-  button:active { transform: scale(0.96); }
-  .btn-primary { background: var(--accent); color: #fff; padding: 16px; border-radius: 12px; font-size: 16px; width: 100%; }
-  .btn-secondary { background: var(--line); color: var(--text); padding: 16px; border-radius: 12px; font-size: 16px; width: 100%; }
-  .btn-icon { background: var(--panel); border: 1px solid var(--line); color: var(--muted); border-radius: 10px; padding: 8px; display: flex; align-items: center; justify-content: center; }
-  .btn-icon svg { width: 20px; height: 20px; fill: currentColor; }
-  
-  input[type="text"], input[type="password"] { 
-    background: #000; border: 2px solid var(--line); border-radius: 12px; padding: 14px; 
-    color: var(--text); font-size: 16px; font-weight: 600; outline: none; width: 100%; transition: border 0.2s;
+  /* СТАРЫЕ СТИЛИ */
+  .top-bar {
+    width: 100%; max-width: 380px; display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 8px 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 4px;
   }
-  input:focus { border-color: var(--accent); }
+  .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; }
+  .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+  .status-container { flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; height: 24px; position: relative; }
+  .status-text { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 8px; position: absolute; width: 100%; justify-content: center; animation: textReveal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .status-text.human { color: var(--status-human); }
+  .status-text.bot { color: var(--status-bot); }
+  @keyframes textReveal { 0% { opacity: 0; transform: scale(0.9); filter: blur(4px); letter-spacing: -2px; } 100% { opacity: 1; transform: scale(1); filter: blur(0); letter-spacing: 2px; } }
+  
+  .typing-dots { display: flex; gap: 4px; align-items: center; height: 100%; }
+  .typing-dots span { width: 5px; height: 5px; background-color: var(--status-bot); border-radius: 50%; display: inline-block; animation: typingBounce 1.4s infinite ease-in-out both; }
+  .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+  .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0s; }
+  @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
 
-  /* ГЛАВНОЕ МЕНЮ */
-  .menu-box {
-    background: var(--panel); padding: 24px; border-radius: 24px; border: 1px solid var(--line);
-    width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  }
-  .menu-box h1 { margin: 0; font-size: 28px; text-align: center; font-weight: 900; letter-spacing: 1px; }
-  .input-group { display: flex; gap: 8px; }
-  
-  /* ИГРОВОЙ ЭКРАН */
-  .game-container { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 380px; }
-  .top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 12px; }
-  .status { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); }
-  
-  .my-code-panel {
-    width: 100%; display: flex; align-items: center; justify-content: space-between;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 10px 16px;
-  }
-  .my-code-label { font-size: 13px; color: var(--muted); font-weight: 800; text-transform: uppercase; }
-  .my-code-digits { display: flex; gap: 6px; }
-  .my-code-digit {
-    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 900; background: #000; border-radius: 6px; color: var(--muted);
-  }
-  .my-code-digit.green { background: var(--green); color: #000; }
-  
-  .board { display: flex; gap: 8px; width: 100%; margin-top: 12px; }
-  .cell {
-    flex: 1; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
-    font-size: 32px; font-weight: 900; border-radius: 12px;
-    background: var(--panel); border: 2px solid var(--line); color: var(--text); transition: all 0.2s;
-  }
-  .cell.locked { background: var(--green); border-color: var(--green); color: #000; }
-  .cell.cursor { border-color: var(--accent); }
-  .cell.fade-yellow { background: rgba(255, 179, 0, 0.1); border-color: rgba(255, 179, 0, 0.3); color: var(--yellow); }
-  .cell.fade-gray { background: #000; border-color: var(--line); color: transparent; opacity: 0.5; }
+  .chat-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 6px 10px; font-family: inherit; font-weight: 900; font-size: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; position: relative; }
+  .chat-btn svg { width: 16px; height: 16px; fill: currentColor; }
+  .badge { position: absolute; top: -6px; right: -6px; background: var(--red); color: #fff; font-size: 10px; font-weight: 900; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); border: 2px solid var(--panel); transition: transform 0.2s; }
+  .badge.hidden { transform: scale(0); }
 
-  /* ОТСТУП МЕЖДУ СТРОКОЙ И КЛАВИАТУРОЙ */
-  .pad-container { width: 100%; margin-top: 32px; }
-  .pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  
-  .pad button {
-    position: relative; padding: 18px 0; font-size: 24px; font-weight: 900;
-    background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px;
-  }
-  .pad button:active:not(:disabled) { background: var(--line); }
-  .pad button:disabled { opacity: 0.3; cursor: not-allowed; background: #000; border-color: transparent; }
-  .pad button.hint { border-color: var(--yellow); color: var(--yellow); }
-  .pad button.hint::after { content: attr(data-hint); position: absolute; top: 4px; right: 6px; font-size: 11px; color: var(--yellow); }
-  
-  .btn-submit { background: rgba(0, 210, 106, 0.1) !important; border-color: var(--green) !important; color: var(--green) !important; }
-  .btn-submit:active:not(:disabled) { background: rgba(0, 210, 106, 0.2) !important; }
-  .btn-submit:disabled { background: #000 !important; border-color: var(--line) !important; color: var(--muted) !important; }
-  
-  .btn-reset { background: rgba(255, 71, 87, 0.1) !important; border-color: var(--red) !important; color: var(--red) !important; }
-  .btn-reset:active:not(:disabled) { background: rgba(255, 71, 87, 0.2) !important; }
+  .my-code-panel { width: 100%; max-width: 380px; display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+  .my-code-header span { font-size: 12px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .my-code-digits { display: flex; gap: 6px; margin-left: auto; }
+  .my-code-digits.hidden-code { filter: blur(6px); opacity: 0.5; }
+  .my-code-digit { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; background: var(--line); border-radius: 6px; transition: all 0.3s; }
+  .my-code-digit.green { background: var(--green); color: #000; box-shadow: 0 0 10px var(--green-glow); }
+  .my-code-digit.yellow { background: var(--yellow); color: #fff; box-shadow: 0 0 10px var(--yellow-glow); }
+  .my-code-digit.gray { color: var(--muted); }
 
-  /* МОДАЛЬНЫЕ ОКНА */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(6px);
-    display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+  .eye-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
+  .eye-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+  .board { display: flex; gap: 8px; width: 100%; max-width: 380px; margin-top: 4px; }
+  .cell { flex: 1; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; border-radius: 16px; background: var(--panel); border: 2px solid var(--line); transition: border-color 0.2s, background 0.2s; cursor: pointer; }
+  .cell.filled { border-color: var(--muted); transform: scale(1.05); }
+  .cell.locked { background: var(--green); border-color: var(--green); color: #000; box-shadow: 0 0 15px var(--green-glow); cursor: default; }
+  .cell.cursor { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); opacity: 0.8; }
+  .cell.fade-yellow { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3); color: var(--yellow); }
+  .cell.fade-gray { background: var(--gray); border-color: var(--line); color: transparent; opacity: 0.5; }
+
+  .pad-container { width: 100%; max-width: 380px; margin-top: 20px; height: 186px; position: relative; }
+  .pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; position: absolute; top: 0; left: 0; }
+  .pad button { position: relative; padding: 16px 0; font-size: 24px; font-family: inherit; font-weight: 900; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: transform 0.1s, background 0.1s; }
+  .pad button:active:not(:disabled) { transform: scale(0.9); background: var(--line); }
+  .pad.waiting button { pointer-events: none; opacity: 0.5; }
+  .pad button:disabled { opacity: .2; cursor: not-allowed; background: var(--bg); border-color: transparent; color: var(--muted); box-shadow: none; }
+  .pad button.hint-yellow { border-color: var(--yellow); color: var(--yellow); box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.2); }
+  .pad button.hint-yellow::after { content: attr(data-hint); position: absolute; top: 2px; right: 6px; font-size: 11px; color: var(--yellow); opacity: 0.9; }
+
+  .btn-submit { background: rgba(16, 185, 129, 0.15) !important; border-color: var(--green) !important; color: var(--green) !important; font-size: 26px !important; }
+  .btn-submit:active:not(:disabled) { background: rgba(16, 185, 129, 0.3) !important; }
+  .btn-submit:disabled { background: rgba(6, 78, 59, 0.3) !important; border-color: var(--green-inactive) !important; color: rgba(16, 185, 129, 0.4) !important; }
+  .btn-reset { background: rgba(239, 68, 68, 0.15) !important; border-color: var(--red) !important; color: var(--red) !important; font-size: 26px !important; }
+  .btn-reset:active:not(:disabled) { background: rgba(239, 68, 68, 0.3) !important; }
+
+  /* SMS (Ход соперника) */
+  .sms-notification {
+    position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150%);
+    width: 90%; max-width: 360px; background: rgba(30, 35, 48, 0.98);
+    border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+    display: flex; flex-direction: column; gap: 10px; align-items: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 100; pointer-events: none;
   }
-  .modal-content {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 24px;
-    width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 16px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.8); animation: popIn 0.3s ease;
-  }
+  .sms-notification.show { transform: translate(-50%, 0); pointer-events: auto; }
+  .sms-header { display: flex; justify-content: space-between; width: 100%; align-items: center; }
+  .sms-title { font-size: 13px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+  .sms-time { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .sms-digits { display: flex; gap: 8px; margin: 4px 0; }
+  .sms-digit { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; border-radius: 10px; background: var(--line); color: var(--text); }
+  .sms-digit.green { background: var(--green); color: #000; box-shadow: 0 0 10px var(--green-glow); }
+  .sms-digit.yellow { background: var(--yellow); color: #fff; box-shadow: 0 0 10px var(--yellow-glow); }
+  .sms-digit.gray { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .sms-hint { font-size: 12px; color: var(--muted); font-weight: 700; }
+
+  /* ЧАТ И НАСТРОЙКИ */
+  .chat-modal, .settings-modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+  .chat-modal.open, .settings-modal.open { pointer-events: auto; opacity: 1; }
+  .modal-box { width: 92%; max-width: 400px; background: rgba(25, 28, 40, 0.95); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 24px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); transform: scale(0.9); transition: transform 0.3s; }
+  .chat-modal.open .modal-box, .settings-modal.open .modal-box { transform: scale(1); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); background: rgba(0,0,0,0.2); }
+  .modal-header h3 { margin: 0; font-size: 18px; font-weight: 900; }
+  .close-btn { background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; }
+  .chat-window { height: 85vh; }
+  .chat-history { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; font-weight: 700; line-height: 1.4; animation: popIn 0.2s ease; }
+  .chat-msg.bot { background: var(--line); color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .chat-msg.me { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .chat-input-area { padding: 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; background: rgba(0,0,0,0.2); }
+  .chat-input-area input { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; color: var(--text); font-family: inherit; font-weight: 700; outline: none; }
+  .chat-input-area button { background: var(--green); color: #000; border: none; border-radius: 12px; padding: 0 20px; font-weight: 900; font-family: inherit; cursor: pointer; }
+
+  .settings-content { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .setting-row { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 15px; }
+  .setting-row select { background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-weight: 700; outline: none; cursor: pointer; }
+  .btn-save { background: var(--accent); color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: 900; font-family: inherit; font-size: 16px; cursor: pointer; margin-top: 10px; }
+
+  /* ЭКРАНЫ МЕНЮ */
+  .menu-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .menu-box { background: var(--panel); padding: 24px; border-radius: 24px; border: 1px solid var(--line); width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .menu-box h2 { margin: 0 0 10px 0; font-size: 22px; text-align: center; font-weight: 900; color: var(--text); }
+  .menu-input { background: #000; border: 2px solid var(--line); border-radius: 12px; padding: 14px; color: var(--text); font-size: 16px; font-weight: 700; text-align: center; outline: none; width: 100%; }
+  .menu-btn { background: var(--line); color: var(--text); border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.2s; font-family: inherit; }
+  .menu-btn.primary { background: var(--accent); color: #fff; }
+  .menu-btn.green { background: var(--green); color: #000; }
+  .menu-btn:hover { opacity: 0.9; }
+  .room-code-display { font-size: 32px; font-weight: 900; letter-spacing: 8px; text-align: center; color: var(--accent); background: #000; padding: 16px; border-radius: 12px; border: 2px solid var(--line); }
+
+  .game-over-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 300; pointer-events: none; transition: opacity 1.5s ease, transform 1.5s ease; }
+  .game-over-screen.hidden { display: none; opacity: 0; }
+  .game-over-screen.fade-out { opacity: 0; transform: scale(0.9) translateY(-20px); }
+  .game-over-content { background: var(--panel); padding: 30px 40px; border-radius: 24px; border: 2px solid var(--line); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; display: flex; flex-direction: column; gap: 12px; }
+  .game-over-content h2 { margin: 0; font-size: 28px; font-weight: 900; }
+  .game-over-content p { margin: 0; font-size: 16px; color: var(--muted); font-weight: 700; }
+  .game-over-code-display { font-size: 32px; font-weight: 900; letter-spacing: 4px; color: var(--text); background: var(--bg); padding: 10px 20px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--line); }
+
+  .confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 250; overflow: hidden; }
+  .confetti { position: absolute; font-size: 30px; user-select: none; animation: fly 4s linear forwards; opacity: 0; }
+  @keyframes fly { 0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(var(--rot)); opacity: 0; } }
+
+  .modal { position: fixed; inset: 0; background: rgba(9, 10, 15, 0.85); display: flex; align-items: center; justify-content: center; z-index: 400; backdrop-filter: blur(8px); transition: opacity 0.3s; }
+  .modal.hidden { opacity: 0; pointer-events: none; display: none; }
+  .modal-content { background: var(--panel); padding: 24px; border-radius: 20px; width: 90%; max-width: 340px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.6s; }
   .modal-content h2 { margin: 0; font-size: 20px; text-align: center; font-weight: 900; }
-  .modal-content p { margin: 0; text-align: center; color: var(--muted); font-size: 14px; font-weight: 600; }
-  
-  .modal-inputs { display: flex; gap: 6px; justify-content: center; }
-  .modal-inputs input {
-    width: 100%; aspect-ratio: 1/1; background: #000; border: 2px solid var(--line);
-    border-radius: 10px; color: var(--text); font-size: 24px; font-weight: 900; text-align: center; padding: 0;
-  }
-  .modal-inputs input:focus { border-color: var(--accent); }
-
-  .room-code-display {
-    font-size: 32px; font-weight: 900; letter-spacing: 6px; text-align: center; color: var(--accent);
-    background: #000; padding: 16px; border-radius: 12px; border: 2px solid var(--line);
-  }
-  
-  .spinner { border: 4px solid var(--line); border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 10px auto; }
+  .modal-content p { margin: 0; font-size: 13px; text-align: center; color: var(--muted); font-weight: 700; }
+  .modal-inputs { display: flex; gap: 8px; justify-content: center; }
+  .modal-inputs input { width: 100%; aspect-ratio: 1/1; background: rgba(0,0,0,0.3); border: 2px solid var(--line); border-radius: 10px; color: var(--text); font-size: 24px; font-weight: 900; text-align: center; font-family: inherit; outline: none; }
+  .modal-inputs input:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .modal-btns { display: flex; gap: 8px; margin-top: 8px; }
+  .modal-btns button { flex: 1; padding: 14px 0; border-radius: 10px; font-weight: 900; cursor: pointer; border: none; font-family: inherit; font-size: 15px; transition: all 0.1s; }
+  .btn-random { background: var(--line); color: var(--text); }
+  .btn-start { background: var(--green); color: #000; box-shadow: 0 4px 15px var(--green-glow); }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .spinner { border: 4px solid var(--line); border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
   @keyframes spin { 100% { transform: rotate(360deg); } }
-  @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-  /* УВЕДОМЛЕНИЯ */
-  .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-  .toast {
-    background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent);
-    padding: 14px 20px; border-radius: 12px; color: var(--text); font-weight: 800;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideDown 0.3s ease forwards;
-  }
-  .toast.error { border-left-color: var(--red); }
-  .toast.success { border-left-color: var(--green); }
-  @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-
-  svg.icon { width: 24px; height: 24px; fill: currentColor; }
 </style>
 </head>
 <body>
 
-<!-- УВЕДОМЛЕНИЯ -->
-<div class="toast-container" id="toast-container"></div>
-
-<!-- ГЛАВНОЕ МЕНЮ -->
-<div class="menu-box" id="main-menu">
-  <h1>УГАДАЙ КОД</h1>
-  <div class="input-group">
-    <input type="text" id="nick-input" placeholder="Твой ник" maxlength="15">
-    <button class="btn-icon" onclick="saveNick()" title="Сохранить">
-      <svg class="icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-    </button>
-  </div>
-  <button class="btn-primary" onclick="openModeMenu()">Играть</button>
-  <button class="btn-secondary" onclick="openSettings()">Настройки</button>
-</div>
-
-<!-- МЕНЮ РЕЖИМОВ -->
-<div class="modal-overlay hidden" id="mode-menu">
-  <div class="modal-content">
-    <h2>Режим игры</h2>
-    <button class="btn-primary" onclick="startBotGame()">Против Бота</button>
-    <button class="btn-secondary" onclick="openOnlineMenu()">Сетевая игра</button>
-    <button class="btn-secondary" style="background: transparent; border: 1px solid var(--line);" onclick="closeModal('mode-menu')">Назад</button>
+<!-- МЕНЮ -->
+<div class="menu-overlay" id="main-menu">
+  <div class="menu-box">
+    <h2>Угадай код</h2>
+    <input type="text" id="nick-input" class="menu-input" placeholder="Ваш ник" maxlength="15">
+    <button class="menu-btn primary" onclick="openOnlineMenu()">Играть по сети</button>
+    <button class="menu-btn" onclick="startBotGame()">Играть с ботом</button>
+    <button class="menu-btn" onclick="openSettings()">Настройки</button>
   </div>
 </div>
 
-<!-- ОНЛАЙН МЕНЮ -->
-<div class="modal-overlay hidden" id="online-menu">
-  <div class="modal-content">
+<div class="menu-overlay hidden" id="online-menu">
+  <div class="menu-box">
     <h2>Сетевая игра</h2>
-    <button class="btn-primary" onclick="showCodeInput('random')">Случайный поиск</button>
-    <button class="btn-primary" style="background: var(--green); color: #000;" onclick="showCodeInput('create')">Создать комнату</button>
-    <button class="btn-secondary" onclick="showJoinInput()">Войти по коду</button>
-    <button class="btn-secondary" style="background: transparent; border: 1px solid var(--line);" onclick="closeModal('online-menu')">Назад</button>
+    <button class="menu-btn primary" onclick="showCodeInput('random')">Случайный поиск</button>
+    <button class="menu-btn green" onclick="showCodeInput('create')">Создать комнату</button>
+    <button class="menu-btn" onclick="showJoinInput()">Войти по коду</button>
+    <button class="menu-btn" onclick="closeMenu('online-menu')">Назад</button>
   </div>
 </div>
 
-<!-- ЭКРАН ВВОДА КОДА -->
-<div class="modal-overlay hidden" id="code-screen">
+<div class="modal hidden" id="code-screen">
   <div class="modal-content">
     <h2>Загадайте код</h2>
-    <p>Введите 6 цифр, которые будет угадывать соперник</p>
+    <p>Введите 6 цифр</p>
     <div class="modal-inputs" id="modal-inputs"></div>
-    <button class="btn-secondary" onclick="randomizeModal()">Рандом</button>
-    <button class="btn-primary" onclick="confirmCode()">Продолжить</button>
-    <button class="btn-secondary" style="background: transparent; border: 1px solid var(--line);" onclick="closeModal('code-screen')">Отмена</button>
+    <div class="modal-btns">
+      <button class="btn-random" onclick="randomizeModal()">Рандом</button>
+      <button class="btn-start" onclick="confirmCode()">Далее</button>
+    </div>
+    <button class="menu-btn" style="padding: 10px; font-size: 14px; margin-top:10px;" onclick="closeModal('code-screen')">Отмена</button>
   </div>
 </div>
 
-<!-- ЭКРАН ОЖИДАНИЯ / КОМНАТЫ -->
-<div class="modal-overlay hidden" id="waiting-screen">
-  <div class="modal-content">
+<div class="menu-overlay hidden" id="waiting-screen">
+  <div class="menu-box" style="align-items: center;">
     <h2 id="waiting-title">Поиск...</h2>
-    <p id="waiting-desc">Ожидание соперника</p>
+    <p id="waiting-desc" style="color: var(--muted); text-align: center; margin: 0;">Ожидание соперника</p>
     <div class="room-code-display hidden" id="room-code-display">XXXXXX</div>
     <div class="spinner" id="waiting-spinner"></div>
-    <button class="btn-secondary" onclick="location.reload()">Отмена</button>
+    <button class="menu-btn" style="margin-top: 10px;" onclick="location.reload()">Отмена</button>
   </div>
 </div>
 
-<!-- ЭКРАН ВХОДА ПО КОДУ КОМНАТЫ -->
-<div class="modal-overlay hidden" id="join-screen">
+<div class="modal hidden" id="join-screen">
   <div class="modal-content">
     <h2>Вход по коду</h2>
-    <p>Введите 6-значный код комнаты</p>
-    <input type="text" id="join-code-input" placeholder="XXXXXX" maxlength="6" style="text-align: center; font-size: 24px; letter-spacing: 4px; text-transform: uppercase;">
-    <button class="btn-primary" onclick="submitJoin()">Войти</button>
-    <button class="btn-secondary" style="background: transparent; border: 1px solid var(--line);" onclick="closeModal('join-screen')">Отмена</button>
+    <input type="text" id="join-code-input" class="menu-input" placeholder="XXXXXX" maxlength="6" style="text-transform: uppercase;">
+    <button class="btn-start" onclick="submitJoin()" style="padding: 14px;">Войти</button>
+    <button class="menu-btn" style="padding: 10px; font-size: 14px; margin-top:10px;" onclick="closeModal('join-screen')">Отмена</button>
   </div>
 </div>
 
 <!-- НАСТРОЙКИ -->
-<div class="modal-overlay hidden" id="settings-modal">
-  <div class="modal-content">
-    <h2>Настройки</h2>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span>Сложность бота</span>
-      <select id="setting-difficulty" onchange="saveSettings()" style="padding: 8px; border-radius: 8px; background: #000; color: #fff; border: 1px solid var(--line);">
-        <option value="easy">Новичок</option>
-        <option value="hard">Профи (ИИ)</option>
-      </select>
+<div class="settings-modal" id="settings-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Настройки</h3>
+      <button class="close-btn" onclick="closeSettings()">×</button>
     </div>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span>Цвет интерфейса</span>
-      <select id="setting-color" onchange="saveSettings()" style="padding: 8px; border-radius: 8px; background: #000; color: #fff; border: 1px solid var(--line);">
-        <option value="#4a7dff">Синий</option>
-        <option value="#00d26a">Зеленый</option>
-        <option value="#ff4757">Красный</option>
-        <option value="#a855f7">Фиолетовый</option>
-        <option value="#ffb300">Желтый</option>
-      </select>
-    </div>
-    <button class="btn-primary" onclick="closeModal('settings-modal')">Готово</button>
-  </div>
-</div>
-
-<!-- ИГРОВОЙ ЭКРАН -->
-<div class="game-container hidden" id="game-screen">
-  <div class="top-bar">
-    <button class="btn-icon" onclick="leaveGame()">
-      <svg class="icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-    </button>
-    <div class="status" id="status-text">ОЖИДАНИЕ</div>
-    <button class="btn-icon" onclick="openChat()">
-      <svg class="icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-    </button>
-  </div>
-
-  <div class="my-code-panel">
-    <div class="my-code-label">Ваш код</div>
-    <div class="my-code-digits" id="my-code-digits"></div>
-  </div>
-
-  <div class="board" id="board"></div>
-  
-  <!-- Клавиатура с отступом -->
-  <div class="pad-container">
-    <div class="pad" id="pad">
-      <button data-val="1">1</button>
-      <button data-val="2">2</button>
-      <button data-val="3">3</button>
-      <button class="btn-submit" data-val="submit" id="btn-submit">✓</button>
-      
-      <button data-val="4">4</button>
-      <button data-val="5">5</button>
-      <button data-val="6">6</button>
-      <button class="btn-reset" data-val="clear">×</button>
-      
-      <button data-val="7">7</button>
-      <button data-val="8">8</button>
-      <button data-val="9">9</button>
-      <button data-val="0">0</button>
+    <div class="settings-content">
+      <div class="setting-row">
+        <span>Сложность бота</span>
+        <select id="setting-difficulty" onchange="saveSettings()">
+          <option value="easy">Новичок</option>
+          <option value="hard" selected>Профи</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <span>Цвет интерфейса</span>
+        <select id="setting-color" onchange="saveSettings()">
+          <option value="#3b82f6">Синий</option>
+          <option value="#10b981">Зеленый</option>
+          <option value="#ec4899">Розовый</option>
+          <option value="#eab308">Желтый</option>
+          <option value="#8b5cf6">Фиолетовый</option>
+        </select>
+      </div>
+      <button class="btn-save" onclick="closeSettings()">Сохранить</button>
     </div>
   </div>
 </div>
 
 <!-- ЧАТ -->
-<div class="modal-overlay hidden" id="chat-modal">
-  <div class="modal-content" style="height: 60vh;">
-    <h2>Чат</h2>
-    <div id="chat-history" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;"></div>
-    <div style="display: flex; gap: 8px;">
-      <input type="text" id="chat-input" placeholder="Сообщение..." onkeydown="if(event.key === 'Enter') sendChat()">
-      <button class="btn-icon" onclick="sendChat()">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-      </button>
+<div class="chat-modal" id="chat-modal">
+  <div class="modal-box chat-window">
+    <div class="modal-header">
+      <h3>Чат</h3>
+      <button class="close-btn" onclick="closeChat()">×</button>
     </div>
-    <button class="btn-secondary" onclick="closeModal('chat-modal')">Закрыть</button>
+    <div class="chat-history" id="chat-history"></div>
+    <div class="chat-input-area">
+      <input type="text" id="chat-input" placeholder="Сообщение..." onkeydown="if(event.key === 'Enter') sendChatMessage()">
+      <button onclick="sendChatMessage()">></button>
+    </div>
   </div>
 </div>
 
-<!-- ТОСТ ХОДА -->
-<div class="toast" id="move-toast" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); opacity: 0; pointer-events: none; z-index: 3000; padding: 16px; display: flex; flex-direction: column; gap: 8px; align-items: center; border-left: none; border: 1px solid var(--line);">
+<!-- ИГРОВОЙ ЭКРАН -->
+<div id="game-screen" class="hidden" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+  <div class="top-bar">
+    <button class="icon-btn" id="open-settings" onclick="openSettings()">
+      <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+    </button>
+    <div class="status-container" id="status-container">
+      <div class="status-text human" id="status-text">ВАШ ХОД</div>
+    </div>
+    <button class="chat-btn" id="open-chat" onclick="openChat()">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      Чат
+      <div class="badge hidden" id="chat-badge">0</div>
+    </button>
+  </div>
+
+  <div class="my-code-panel">
+    <div class="my-code-header"><span>Ваш код</span></div>
+    <div class="my-code-digits" id="my-code-digits"></div>
+    <button class="eye-btn" id="toggle-code" onclick="toggleCode()">
+      <svg id="eye-icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+    </button>
+  </div>
+
+  <div class="board" id="board"></div>
+  
+  <div class="pad-container" id="pad-container">
+    <div class="pad" id="pad"></div>
+  </div>
 </div>
+
+<!-- УВЕДОМЛЕНИЕ (СМС) -->
+<div class="sms-notification" id="sms-notification">
+  <div class="sms-header">
+    <div class="sms-title" id="sms-title">Код соперника</div>
+    <div class="sms-time">Сейчас</div>
+  </div>
+  <div class="sms-digits" id="sms-digits"></div>
+  <div class="sms-hint">Нажмите, чтобы закрыть</div>
+</div>
+
+<!-- ЭКРАН КОНЦА ИГРЫ -->
+<div class="game-over-screen hidden" id="game-over-screen">
+  <div class="game-over-content">
+    <h2 id="game-over-title">Победа!</h2>
+    <p id="game-over-desc">Вы угадали код</p>
+    <div class="game-over-code-display" id="game-over-code"></div>
+  </div>
+</div>
+<div class="confetti-container" id="confetti-container"></div>
 
 <script>
 "use strict";
+
 const socket = io();
 const CODE_LEN = 6;
+const DIGITS = "0123456789".split("");
+const BOT_THINK_DELAY = 1000; 
+const SMS_SHOW_TIME = 3000;   
 
-let myUsername = localStorage.getItem("gc_nick") || "";
-let isOnline = false;
-let gameMode = "";
-let mySecretCode = "";
-let targetRoomCode = "";
-let roomId = null;
-let currentTurn = null;
-let opponentName = "Бот";
+const state = {
+  isOnline: false,
+  myUsername: localStorage.getItem("gc_nick") || "",
+  roomId: null,
+  currentTurn: null, 
+  opponentName: "БОТ",
+  gameMode: "",
 
-let locked = Array(CODE_LEN).fill(false);
-let lockedDigits = Array(CODE_LEN).fill(null);
-let input = Array(CODE_LEN).fill("");
-let attempts = [];
-let cursor = 0;
-let lastMarks = Array(CODE_LEN).fill("");
-let lastGuess = null;
-
-// Bot vars
-let botLockedDigits = Array(CODE_LEN).fill(null);
-let botKnownWrong = new Set();
-let botCandidates = [];
-let secretBot = "";
-let myCodeStatus = Array(CODE_LEN).fill("gray");
-
-const el = {
-  mainMenu: document.getElementById("main-menu"),
-  modeMenu: document.getElementById("mode-menu"),
-  onlineMenu: document.getElementById("online-menu"),
-  codeScreen: document.getElementById("code-screen"),
-  waitingScreen: document.getElementById("waiting-screen"),
-  waitingTitle: document.getElementById("waiting-title"),
-  waitingDesc: document.getElementById("waiting-desc"),
-  roomCodeDisplay: document.getElementById("room-code-display"),
-  joinScreen: document.getElementById("join-screen"),
-  gameScreen: document.getElementById("game-screen"),
-  statusText: document.getElementById("status-text"),
-  board: document.getElementById("board"),
-  pad: document.getElementById("pad"),
-  myCodeDigits: document.getElementById("my-code-digits"),
-  modalInputs: document.getElementById("modal-inputs"),
-  nickInput: document.getElementById("nick-input"),
-  moveToast: document.getElementById("move-toast"),
-  chatHistory: document.getElementById("chat-history")
+  secretHuman: null, secretBot: null,
+  lastMarks: Array(CODE_LEN).fill(""), 
+  lastGuess: null,
+  cursor: 0, locked: [], lockedDigits: [], input: [], 
+  attempts: [], 
+  phase: "setup",
+  humanCodeStatus: Array(CODE_LEN).fill("gray"),
+  botKnownWrong: new Set(),
+  botCandidates: [],
+  unreadCount: 0,
+  
+  settings: {
+    difficulty: "hard",
+    color: "#3b82f6"
+  }
 };
 
-if (myUsername) el.nickInput.value = myUsername;
-loadSettings();
+let botTimer = null; 
+let smsTimer = null;
+let isCodeHidden = false;
+let currentStatusPhase = ""; 
 
-/* ============ УВЕДОМЛЕНИЯ ============ */
-function showNotify(msg, type = "info") {
-  const container = document.getElementById("toast-container");
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.textContent = msg;
-  container.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+const el = {
+  gameScreen: document.getElementById("game-screen"),
+  board: document.getElementById("board"),
+  pad: document.getElementById("pad"),
+  smsNotif: document.getElementById("sms-notification"),
+  smsTitle: document.getElementById("sms-title"),
+  smsDigits: document.getElementById("sms-digits"),
+  myCodeDigits: document.getElementById("my-code-digits"),
+  eyeIcon: document.getElementById("eye-icon"),
+  modalInputs: document.getElementById("modal-inputs"),
+  gameOverScreen: document.getElementById("game-over-screen"),
+  gameOverTitle: document.getElementById("game-over-title"),
+  gameOverDesc: document.getElementById("game-over-desc"),
+  gameOverCode: document.getElementById("game-over-code"),
+  confettiContainer: document.getElementById("confetti-container"),
+  statusContainer: document.getElementById("status-container"),
+  chatModal: document.getElementById("chat-modal"),
+  chatHistory: document.getElementById("chat-history"),
+  chatInput: document.getElementById("chat-input"),
+  chatBadge: document.getElementById("chat-badge"),
+  settingsModal: document.getElementById("settings-modal"),
+  settingDifficulty: document.getElementById("setting-difficulty"),
+  settingColor: document.getElementById("setting-color"),
+  nickInput: document.getElementById("nick-input"),
+};
+
+const randDigit = () => DIGITS[Math.floor(Math.random() * DIGITS.length)];
+function randomCode() { return Array.from({ length: CODE_LEN }, randDigit).join(""); }
+
+function scoreGuess(guess, secret) {
+  const marks = Array(CODE_LEN).fill("gray");
+  const secretLeft = Array(CODE_LEN).fill(true);
+  const guessLeft = Array(CODE_LEN).fill(true);
+
+  for (let i = 0; i < CODE_LEN; i++) {
+    if (guess[i] === secret[i]) { marks[i] = "green"; secretLeft[i] = false; guessLeft[i] = false; }
+  }
+  for (let i = 0; i < CODE_LEN; i++) {
+    if (!guessLeft[i]) continue;
+    for (let j = 0; j < CODE_LEN; j++) {
+      if (secretLeft[j] && secret[j] === guess[i]) { marks[i] = "yellow"; secretLeft[j] = false; break; }
+    }
+  }
+  return marks;
 }
 
-function showMoveToast(guess, marks) {
-  el.moveToast.innerHTML = "";
-  const title = document.createElement("div");
-  title.style.cssText = "width: 100%; text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase;";
-  title.textContent = `Ход ${opponentName}`;
-  el.moveToast.appendChild(title);
+/* ============ СТАРТОВЫЕ МЕНЮ ============ */
+if (state.myUsername) el.nickInput.value = state.myUsername;
+document.getElementById("setting-difficulty").value = localStorage.getItem("gc_diff") || "hard";
+const savedColor = localStorage.getItem("gc_color") || "#3b82f6";
+document.getElementById("setting-color").value = savedColor;
+document.documentElement.style.setProperty('--accent', savedColor);
 
-  const row = document.createElement("div");
-  row.style.cssText = "display: flex; gap: 6px; justify-content: center; width: 100%;";
-  guess.split("").forEach((d, i) => {
-    const c = document.createElement("div");
-    let bg = "var(--line)"; let color = "var(--muted)";
-    if (marks[i] === "green") { bg = "var(--green)"; color = "#000"; }
-    if (marks[i] === "yellow") { bg = "var(--yellow)"; color = "#000"; }
-    c.style.cssText = `width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; border-radius: 8px; background: ${bg}; color: ${color};`;
-    c.textContent = d;
-    row.appendChild(c);
-  });
-  el.moveToast.appendChild(row);
-
-  el.moveToast.style.opacity = "1";
-  setTimeout(() => { el.moveToast.style.opacity = "0"; }, 3000);
-}
-
-/* ============ МЕНЮ И НАСТРОЙКИ ============ */
+function closeMenu(id) { document.getElementById(id).classList.add("hidden"); }
+function openMenu(id) { document.getElementById(id).classList.remove("hidden"); }
 function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
 function openModal(id) { document.getElementById(id).classList.remove("hidden"); }
 
-function saveNick() {
-  const val = el.nickInput.value.trim();
-  if (!/^[a-zA-Z0-9_-]{3,15}$/.test(val)) { showNotify("Ник: от 3 до 15 символов (латиница, цифры, _ -)", "error"); return; }
-  myUsername = val;
-  localStorage.setItem("gc_nick", val);
-  showNotify("Ник сохранен", "success");
-}
-
-function openModeMenu() {
-  if (!myUsername) { showNotify("Сначала сохрани ник!", "error"); return; }
-  openModal("mode-menu");
-}
-
 function openOnlineMenu() {
-  closeModal("mode-menu");
-  openModal("online-menu");
+  const nick = el.nickInput.value.trim();
+  if (!/^[a-zA-Z0-9_-]{3,15}$/.test(nick)) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">Ник: от 3 до 15 символов (латиница, цифры)</span>`); return; }
+  state.myUsername = nick;
+  localStorage.setItem("gc_nick", nick);
+  closeMenu("main-menu");
+  openMenu("online-menu");
 }
 
-function openSettings() { openModal("settings-modal"); }
-
-function saveSettings() {
-  localStorage.setItem("gc_diff", document.getElementById("setting-difficulty").value);
-  localStorage.setItem("gc_color", document.getElementById("setting-color").value);
-  document.documentElement.style.setProperty('--accent', document.getElementById("setting-color").value);
-}
-
-function loadSettings() {
-  document.getElementById("setting-difficulty").value = localStorage.getItem("gc_diff") || "hard";
-  const color = localStorage.getItem("gc_color") || "#4a7dff";
-  document.getElementById("setting-color").value = color;
-  document.documentElement.style.setProperty('--accent', color);
-}
-
-function leaveGame() { location.reload(); }
-
-/* ============ ВВОД КОДА И ОНЛАЙН ============ */
 function showCodeInput(mode) {
-  gameMode = mode;
-  closeModal("online-menu");
+  state.gameMode = mode;
+  closeMenu("online-menu");
   openModal("code-screen");
   
   el.modalInputs.innerHTML = "";
@@ -447,264 +460,242 @@ function showCodeInput(mode) {
   }
 }
 
-function randomizeModal() {
-  Array.from(el.modalInputs.children).forEach(inp => inp.value = Math.floor(Math.random() * 10));
-}
+function randomizeModal() { Array.from(el.modalInputs.children).forEach(inp => inp.value = randDigit()); }
 
 function confirmCode() {
   const code = Array.from(el.modalInputs.children).map(inp => inp.value.trim()).join("");
-  if (code.length !== CODE_LEN) { showNotify("Введи все 6 цифр!", "error"); return; }
-  mySecretCode = code;
+  if (code.length !== CODE_LEN) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">Введи все 6 цифр!</span>`); return; }
   
+  state.secretHuman = code;
   closeModal("code-screen");
-  openModal("waiting-screen");
-  el.roomCodeDisplay.classList.add("hidden");
+  openMenu("waiting-screen");
+  document.getElementById("room-code-display").classList.add("hidden");
   document.getElementById("waiting-spinner").classList.remove("hidden");
 
-  if (gameMode === "random") {
-    el.waitingTitle.textContent = "Поиск соперника...";
-    el.waitingDesc.textContent = "Подбираем случайного игрока";
-    socket.emit('find_random', { username: myUsername, code: mySecretCode });
-  } else if (gameMode === "create") {
-    el.waitingTitle.textContent = "Создание комнаты...";
-    el.waitingDesc.textContent = "Ожидание подключения друга";
-    socket.emit('create_room', { username: myUsername, code: mySecretCode });
-  } else if (gameMode === "join") {
-    el.waitingTitle.textContent = "Подключение...";
-    el.waitingDesc.textContent = "Входим в комнату " + targetRoomCode;
-    socket.emit('join_room', { username: myUsername, code: mySecretCode, roomCode: targetRoomCode });
+  if (state.gameMode === "random") {
+    document.getElementById("waiting-title").textContent = "Поиск соперника...";
+    document.getElementById("waiting-desc").textContent = "Ожидание...";
+    socket.emit('find_random', { username: state.myUsername, code: code });
+  } else if (state.gameMode === "create") {
+    document.getElementById("waiting-title").textContent = "Создание комнаты...";
+    document.getElementById("waiting-desc").textContent = "Ожидание друга";
+    socket.emit('create_room', { username: state.myUsername, code: code });
+  } else if (state.gameMode === "join") {
+    document.getElementById("waiting-title").textContent = "Подключение...";
+    document.getElementById("waiting-desc").textContent = "Входим в комнату...";
+    socket.emit('join_room', { username: state.myUsername, code: code, roomCode: state.targetRoomCode });
   }
 }
 
 function showJoinInput() {
-  closeModal("online-menu");
+  closeMenu("online-menu");
   document.getElementById("join-code-input").value = "";
   openModal("join-screen");
 }
 
 function submitJoin() {
   const code = document.getElementById("join-code-input").value.trim().toUpperCase();
-  if (code.length !== 6) { showNotify("Код должен быть 6 символов", "error"); return; }
-  targetRoomCode = code;
+  if (code.length !== 6) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">Код должен быть 6 символов</span>`); return; }
+  state.targetRoomCode = code;
   closeModal("join-screen");
   showCodeInput("join");
 }
 
-/* ============ СОКЕТЫ ============ */
+/* ============ НАСТРОЙКИ И ЧАТ ============ */
+function openSettings() { document.body.classList.add("blur-active"); el.settingsModal.classList.add("open"); }
+function closeSettings() { document.body.classList.remove("blur-active"); el.settingsModal.classList.remove("open"); }
+function saveSettings() {
+  localStorage.setItem("gc_diff", el.settingDifficulty.value);
+  localStorage.setItem("gc_color", el.settingColor.value);
+  document.documentElement.style.setProperty('--accent', el.settingColor.value);
+  renderPad();
+}
+
+function openChat() { document.body.classList.add("blur-active"); el.chatModal.classList.add("open"); state.unreadCount = 0; updateBadge(); setTimeout(() => el.chatInput.focus(), 300); }
+function closeChat() { document.body.classList.remove("blur-active"); el.chatModal.classList.remove("open"); }
+function updateBadge() {
+  if (state.unreadCount > 0) { el.chatBadge.textContent = state.unreadCount; el.chatBadge.classList.remove("hidden"); }
+  else { el.chatBadge.classList.add("hidden"); }
+}
+function addChatMsg(user, text, isMe) {
+  const msg = document.createElement("div");
+  msg.className = "chat-msg " + (isMe ? "me" : "bot");
+  msg.innerHTML = isMe ? text : `<b style="font-size:10px;opacity:0.7;display:block;margin-bottom:2px">${user}</b>${text}`;
+  el.chatHistory.appendChild(msg);
+  el.chatHistory.scrollTop = el.chatHistory.scrollHeight;
+  if (!isMe && !el.chatModal.classList.contains("open")) { state.unreadCount++; updateBadge(); }
+}
+function sendChatMessage() {
+  const text = el.chatInput.value.trim(); if (!text) return;
+  el.chatInput.value = "";
+  if (state.isOnline) socket.emit('chat_message', { roomId: state.roomId, text, username: state.myUsername });
+  else { addChatMsg("Вы", text, true); setTimeout(() => addChatMsg("БОТ", "Занятно.", false), 1000); }
+}
+
+/* ============ УВЕДОМЛЕНИЯ (СМС) ============ */
+function showSMS(title, contentHtml) {
+  el.smsTitle.textContent = title;
+  el.smsDigits.innerHTML = contentHtml;
+  el.smsNotif.classList.add("show");
+  if (smsTimer) clearTimeout(smsTimer);
+  smsTimer = setTimeout(() => el.smsNotif.classList.remove("show"), SMS_SHOW_TIME);
+}
+
+function showOpponentMove(guess, marks) {
+  let html = "";
+  guess.split("").forEach((d, i) => {
+    let bg = "var(--line)"; let color = "var(--text)";
+    if (marks[i] === "green") { bg = "var(--green)"; color = "#000"; }
+    if (marks[i] === "yellow") { bg = "var(--yellow)"; color = "#000"; }
+    html += `<div class="sms-digit" style="background:${bg}; color:${color};">${d}</div>`;
+  });
+  showSMS(`Ход ${state.opponentName}`, html);
+}
+
+el.smsNotif.addEventListener("click", () => el.smsNotif.classList.remove("show"));
+
+/* ============ ИГРА ============ */
+function startBotGame() {
+  const nick = el.nickInput.value.trim();
+  if (!/^[a-zA-Z0-9_-]{3,15}$/.test(nick)) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">Ник: от 3 до 15 символов</span>`); return; }
+  state.myUsername = nick;
+  localStorage.setItem("gc_nick", nick);
+
+  closeMenu("main-menu");
+  state.isOnline = false;
+  state.opponentName = "БОТ";
+  state.phase = "humanTurn";
+  
+  state.secretBot = randomCode();
+  state.secretHuman = randomCode();
+  
+  initGameUI();
+}
+
 socket.on('waiting_random', () => {});
 
 socket.on('room_created', (data) => {
-  el.waitingTitle.textContent = "Комната создана";
-  el.waitingDesc.textContent = "Отправь этот код другу:";
-  el.roomCodeDisplay.textContent = data.roomCode;
-  el.roomCodeDisplay.classList.remove("hidden");
+  document.getElementById("waiting-title").textContent = "Комната создана";
+  document.getElementById("waiting-desc").textContent = "Отправь этот код другу:";
+  document.getElementById("room-code-display").textContent = data.roomCode;
+  document.getElementById("room-code-display").classList.remove("hidden");
   document.getElementById("waiting-spinner").classList.add("hidden");
 });
 
 socket.on('err_msg', (msg) => {
-  showNotify(msg, "error");
-  location.reload();
+  showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">${msg}</span>`);
+  setTimeout(() => location.reload(), 3000);
 });
 
 socket.on('game_start', (data) => {
-  isOnline = true;
-  roomId = data.roomId;
-  currentTurn = data.turn;
-  opponentName = (data.p1_name === myUsername) ? data.p2_name : data.p1_name;
+  state.isOnline = true;
+  state.roomId = data.roomId;
+  state.currentTurn = data.turn;
+  state.opponentName = (data.p1_name === state.myUsername) ? data.p2_name : data.p1_name;
+  state.phase = "online";
 
-  closeModal("waiting-screen");
-  el.mainMenu.classList.add("hidden");
-  el.gameScreen.classList.remove("hidden");
+  closeMenu("waiting-screen");
+  state.secretHuman = state.secretHuman; // Уже задан
   
-  resetBoardState();
-  updateTurnUI();
-  renderBoard(); updatePadUI();
-  renderMyCodeStatus(Array(CODE_LEN).fill("gray"));
+  initGameUI();
+  el.chatHistory.innerHTML = "";
 });
 
 socket.on('guess_result', (data) => {
   if (data.player === socket.id) {
     processMyGuess(data.guess, data.marks);
   } else {
-    showMoveToast(data.guess, data.marks);
+    showOpponentMove(data.guess, data.marks);
   }
-  currentTurn = data.nextTurn;
-  updateTurnUI();
+  state.currentTurn = data.nextTurn;
+  updateStatusUI();
 });
 
 socket.on('game_over', (data) => {
-  if (data.winner === socket.id) {
-    showNotify("Вы победили! Соперник не успел.", "success");
-  } else {
-    showNotify(`Вы проиграли. ${opponentName} угадал ваш код: ${data.code}`, "error");
-  }
-  setTimeout(() => location.reload(), 4000);
+  if (data.winner === socket.id) triggerGameOver(true);
+  else triggerGameOver(false, data.code);
 });
 
 socket.on('chat_message', (data) => {
-  addChatMsg(data.username, data.text, data.username === myUsername);
+  addChatMsg(data.username, data.text, data.username === state.myUsername);
 });
 
-/* ============ ЯДРО ИГРЫ ============ */
-function resetBoardState() {
-  locked = Array(CODE_LEN).fill(false);
-  lockedDigits = Array(CODE_LEN).fill(null);
-  input = Array(CODE_LEN).fill("");
-  attempts = [];
-  cursor = 0;
-  lastMarks = Array(CODE_LEN).fill("");
-  lastGuess = null;
-  botLockedDigits = Array(CODE_LEN).fill(null);
-  botKnownWrong.clear();
-  botCandidates = [];
-  myCodeStatus = Array(CODE_LEN).fill("gray");
-}
-
-function startBotGame() {
-  closeModal("mode-menu");
-  isOnline = false;
-  opponentName = "Бот";
-  
-  secretBot = Array.from({ length: CODE_LEN }, () => Math.floor(Math.random() * 10)).join("");
-  mySecretCode = Array.from({ length: CODE_LEN }, () => Math.floor(Math.random() * 10)).join("");
-  
-  el.mainMenu.classList.add("hidden");
+function initGameUI() {
+  closeMenu("main-menu");
   el.gameScreen.classList.remove("hidden");
   
-  resetBoardState();
-  currentTurn = "human";
-  updateTurnUI();
-  renderBoard(); updatePadUI();
-  renderMyCodeStatus(Array(CODE_LEN).fill("gray"));
-}
-
-function processMyGuess(guess, marks) {
-  lastGuess = guess; lastMarks = marks;
-  for (let i = 0; i < CODE_LEN; i++) {
-    if (marks[i] === "green") { locked[i] = true; lockedDigits[i] = guess[i]; }
-    else if (!locked[i]) attempts.push({ slot: i, digit: guess[i] });
-  }
-  input = Array(CODE_LEN).fill("");
-  cursor = 0; moveCursorNext();
-  renderBoard(); updatePadUI();
-}
-
-function updateTurnUI() {
-  if (currentTurn === "human" || currentTurn === socket.id) {
-    el.statusText.textContent = "ВАШ ХОД";
-    el.statusText.style.color = "var(--green)";
-  } else {
-    el.statusText.textContent = `${opponentName.toUpperCase()} ДУМАЕТ`;
-    el.statusText.style.color = "var(--yellow)";
-  }
-}
-
-function submitGuess() {
-  if (!isOnline && currentTurn !== "human") return;
-  if (isOnline && currentTurn !== socket.id) return;
-
-  const guess = input.map((d, i) => locked[i] ? lockedDigits[i] : d).join("");
-  if (guess.length !== CODE_LEN || guess.includes("undefined")) return;
-
-  if (isOnline) {
-    socket.emit('make_guess', { roomId, guess });
-  } else {
-    const marks = scoreGuess(guess, secretBot);
-    processMyGuess(guess, marks);
-    if (marks.every(m => m === "green")) { showNotify("Вы угадали код!", "success"); setTimeout(() => location.reload(), 3000); return; }
-    
-    currentTurn = "bot";
-    updateTurnUI();
-    setTimeout(botTurn, 1000);
-  }
-}
-
-function botTurn() {
-  if (isOnline || currentTurn !== "bot") return;
-  let guess = "";
-  const diff = localStorage.getItem("gc_diff") || "hard";
-
-  if (diff === "hard") {
-    if (botCandidates.length === 0) {
-      for (let n = 0; n < 1000000; n++) botCandidates.push(String(n).padStart(6, "0"));
-    }
-    guess = botCandidates[Math.floor(Math.random() * botCandidates.length)];
-  } else {
-    let arr = Array(CODE_LEN).fill(null);
-    for (let i = 0; i < CODE_LEN; i++) if (botLockedDigits[i]) arr[i] = botLockedDigits[i];
-    for (let i = 0; i < CODE_LEN; i++) {
-      if (arr[i]) continue;
-      let avail = "0123456789".split("").filter(d => !botKnownWrong.has(d) && !arr.includes(d));
-      if (!avail.length) avail = "0123456789".split("");
-      arr[i] = avail[Math.floor(Math.random() * avail.length)];
-    }
-    guess = arr.join("");
-  }
-
-  const marks = scoreGuess(guess, mySecretCode);
-  for (let i = 0; i < CODE_LEN; i++) {
-    if (marks[i] === "green") { botLockedDigits[i] = guess[i]; myCodeStatus[i] = "green"; }
-    if (marks[i] === "gray") botKnownWrong.add(guess[i]);
-  }
-
-  if (diff === "hard") {
-    botCandidates = botCandidates.filter(c => scoreGuess(guess, c).every((v, i) => v === marks[i]));
-  }
-
-  renderMyCodeStatus(myCodeStatus);
-  showMoveToast(guess, marks);
-
-  if (marks.every(m => m === "green")) {
-    showNotify(`Бот угадал твой код: ${mySecretCode}`, "error");
-    setTimeout(() => location.reload(), 4000);
-    return;
-  }
-
-  setTimeout(() => { currentTurn = "human"; updateTurnUI(); }, 3000);
-}
-
-function scoreGuess(guess, secret) {
-  const marks = Array(CODE_LEN).fill("gray");
-  const sLeft = Array(CODE_LEN).fill(true);
-  const gLeft = Array(CODE_LEN).fill(true);
-  for (let i = 0; i < CODE_LEN; i++) if (guess[i] === secret[i]) { marks[i] = "green"; sLeft[i] = false; gLeft[i] = false; }
-  for (let i = 0; i < CODE_LEN; i++) {
-    if (!gLeft[i]) continue;
-    for (let j = 0; j < CODE_LEN; j++) {
-      if (sLeft[j] && secret[j] === guess[i]) { marks[i] = "yellow"; sLeft[j] = false; break; }
-    }
-  }
-  return marks;
-}
-
-function putDigit(d) {
-  if (!isOnline && currentTurn !== "human") return;
-  if (isOnline && currentTurn !== socket.id) return;
+  state.lastMarks = Array(CODE_LEN).fill("");
+  state.lastGuess = null;
+  state.locked = Array(CODE_LEN).fill(false);
+  state.lockedDigits = Array(CODE_LEN).fill(null);
+  state.attempts = [];
+  state.input = Array(CODE_LEN).fill("");
+  state.cursor = 0;
+  moveCursorNext();
+  state.humanCodeStatus = Array(CODE_LEN).fill("gray");
+  state.botKnownWrong = new Set();
+  state.botCandidates = [];
+  botLockedDigits = Array(CODE_LEN).fill(null);
+  state.unreadCount = 0;
+  currentStatusPhase = "";
   
-  let slot = cursor;
-  for (let k = 0; k < CODE_LEN; k++) {
-    const s = (slot + k) % CODE_LEN;
-    if (!locked[s] && !input[s]) { slot = s; break; }
-  }
-  if (locked[slot] || input[slot]) return;
-  if (attempts.some(a => a.slot === slot && a.digit === d)) return;
+  updateBadge();
+  render();
+}
+
+function isMyTurn() {
+  return state.isOnline ? (state.currentTurn === socket.id) : (state.phase === "humanTurn");
+}
+
+function updateStatusUI() {
+  let phaseString = isMyTurn() ? "humanTurn" : "botTurn";
+  if (state.phase === "over") phaseString = "over";
+  if (currentStatusPhase === phaseString) return;
+  currentStatusPhase = phaseString;
+
+  el.statusContainer.innerHTML = "";
+  const newStatus = document.createElement("div");
   
-  cursor = slot; input[slot] = d;
-  moveCursorNext(); renderBoard(); updatePadUI();
-}
-
-function clearInput() {
-  if (!isOnline && currentTurn !== "human") return;
-  if (isOnline && currentTurn !== socket.id) return;
-  for (let i = 0; i < CODE_LEN; i++) if (!locked[i]) input[i] = "";
-  cursor = 0; moveCursorNext(); renderBoard(); updatePadUI();
-}
-
-function moveCursorNext() {
-  for (let k = 0; k < CODE_LEN; k++) {
-    const s = (cursor + k) % CODE_LEN;
-    if (!locked[s] && !input[s]) { cursor = s; return; }
+  if (isMyTurn()) {
+    newStatus.className = "status-text human";
+    newStatus.textContent = "ВАШ ХОД";
+  } else if (state.phase === "over") {
+    newStatus.className = "status-text";
+    newStatus.textContent = "ИГРА ОКОНЧЕНА";
+  } else {
+    newStatus.className = "status-text bot";
+    newStatus.innerHTML = `${state.opponentName.toUpperCase()} ДУМАЕТ <div class="typing-dots"><span></span><span></span><span></span></div>`;
   }
+  el.statusContainer.appendChild(newStatus);
+}
+
+function render() {
+  renderMyCode();
+  renderBoard();
+  renderPad();
+  updateStatusUI();
+}
+
+function renderMyCode() {
+  el.myCodeDigits.innerHTML = "";
+  for (let i = 0; i < CODE_LEN; i++) {
+    const d = document.createElement("div");
+    d.className = "my-code-digit " + state.humanCodeStatus[i];
+    d.textContent = state.secretHuman ? state.secretHuman[i] : "-";
+    el.myCodeDigits.appendChild(d);
+  }
+  if (isCodeHidden) {
+    el.myCodeDigits.classList.add("hidden-code");
+    el.eyeIcon.innerHTML = `<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>`;
+  } else {
+    el.myCodeDigits.classList.remove("hidden-code");
+    el.eyeIcon.innerHTML = `<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>`;
+  }
+}
+
+function toggleCode() {
+  isCodeHidden = !isCodeHidden;
+  renderMyCode();
 }
 
 function renderBoard() {
@@ -712,86 +703,263 @@ function renderBoard() {
   for (let i = 0; i < CODE_LEN; i++) {
     const c = document.createElement("div");
     c.className = "cell";
-    if (locked[i]) { c.classList.add("locked"); c.textContent = lockedDigits[i] ?? ""; }
-    else if (input[i]) { c.textContent = input[i]; }
-    else if (lastMarks[i] === "yellow" && lastGuess) { c.classList.add("fade-yellow"); c.textContent = lastGuess[i]; }
-    else if (lastMarks[i] === "gray") { c.classList.add("fade-gray"); c.textContent = "•"; }
-    if (i === cursor && !locked[i]) c.classList.add("cursor");
+    
+    if (state.locked[i]) {
+      c.classList.add("locked");
+      c.textContent = state.lockedDigits[i] ?? "";
+    } else if (state.input[i]) {
+      c.classList.add("filled");
+      c.textContent = state.input[i];
+    } else if (state.lastMarks[i] === "yellow" && state.lastGuess) {
+      c.classList.add("fade-yellow");
+      c.textContent = state.lastGuess[i];
+    } else if (state.lastMarks[i] === "gray") {
+      c.classList.add("fade-gray");
+      c.textContent = "•";
+    }
+
+    if (i === state.cursor && !state.locked[i] && isMyTurn()) {
+      c.classList.add("cursor");
+    }
     el.board.appendChild(c);
   }
 }
 
-function updatePadUI() {
-  const hints = {};
-  if (lastMarks && lastGuess) {
-    lastMarks.forEach((m, i) => { if (m === "yellow") hints[lastGuess[i]] = (hints[lastGuess[i]] || 0) + 1; });
-  }
-
-  const btns = el.pad.querySelectorAll('button[data-val]');
-  btns.forEach(btn => {
-    const val = btn.dataset.val;
-    if (val === 'submit' || val === 'clear') return;
-
-    const isCursorEmpty = !locked[cursor] && !input[cursor];
-    const isTried = isCursorEmpty && attempts.some(a => a.slot === cursor && a.digit === val);
-    btn.disabled = isTried;
-
-    if (!btn.disabled && hints[val]) {
-      btn.classList.add('hint');
-      btn.setAttribute('data-hint', hints[val]);
-    } else {
-      btn.classList.remove('hint');
-      btn.removeAttribute('data-hint');
-    }
-  });
-
-  const subBtn = document.getElementById('btn-submit');
-  subBtn.disabled = !input.every((d, i) => locked[i] || d !== "");
-}
-
-function renderMyCodeStatus(marks) {
-  el.myCodeDigits.innerHTML = "";
-  for (let i = 0; i < CODE_LEN; i++) {
-    const d = document.createElement("div");
-    d.className = "my-code-digit " + (marks ? marks[i] : "gray");
-    d.textContent = mySecretCode ? mySecretCode[i] : "-";
-    el.myCodeDigits.appendChild(d);
-  }
-}
-
-/* ============ ЧАТ ============ */
-function openChat() { openModal("chat-modal"); }
-function addChatMsg(user, text, isMe) {
-  const msg = document.createElement("div");
-  msg.style.cssText = isMe
-    ? "background: var(--accent); color: #fff; padding: 8px 12px; border-radius: 12px; align-self: flex-end; font-size: 14px; max-width: 80%;"
-    : "background: var(--line); color: #fff; padding: 8px 12px; border-radius: 12px; align-self: flex-start; font-size: 14px; max-width: 80%;";
-  msg.innerHTML = `<b style="font-size:10px; opacity:0.7; display:block; margin-bottom:2px;">${user}</b>${text}`;
-  el.chatHistory.appendChild(msg);
-  el.chatHistory.scrollTop = el.chatHistory.scrollHeight;
-}
-
-function sendChat() {
-  const inp = document.getElementById("chat-input");
-  const text = inp.value.trim();
-  if (!text) return;
-  inp.value = "";
-  if (isOnline) {
-    socket.emit('chat_message', { roomId, text, username: myUsername });
+function renderPad() {
+  el.pad.innerHTML = "";
+  
+  if (!isMyTurn()) {
+    el.pad.classList.add("waiting");
   } else {
-    addChatMsg(myUsername, text, true);
-    setTimeout(() => addChatMsg("Бот", "Занятно. Продолжай угадывать.", false), 1000);
+    el.pad.classList.remove("waiting");
+  }
+
+  const hints = {};
+  if (state.lastMarks && state.lastGuess) {
+    state.lastMarks.forEach((m, i) => {
+      if (m === "yellow") {
+        const d = state.lastGuess[i];
+        hints[d] = (hints[d] || 0) + 1;
+      }
+    });
+  }
+
+  const addBtn = (text, cls, fn, isDigit = false) => {
+    const b = document.createElement("button");
+    b.textContent = text;
+    if (cls) b.className = cls;
+    
+    if (isDigit) {
+      const isCursorEmpty = !state.locked[state.cursor] && !state.input[state.cursor];
+      if (isCursorEmpty) {
+          const isTriedInCursor = state.attempts.some(a => a.slot === state.cursor && a.digit === text);
+          if (isTriedInCursor) b.disabled = true;
+      }
+      
+      if (!b.disabled && hints[text]) {
+        b.classList.add("hint-yellow");
+        b.setAttribute("data-hint", hints[text]);
+      }
+    }
+    
+    b.addEventListener("click", (e) => { e.preventDefault(); if(!b.disabled) fn(); });
+    el.pad.appendChild(b);
+    return b;
+  };
+
+  addBtn("1", "", () => putDigit("1"), true);
+  addBtn("2", "", () => putDigit("2"), true);
+  addBtn("3", "", () => putDigit("3"), true);
+  const subBtn = addBtn("✓", "btn-submit", submitGuess);
+  
+  addBtn("4", "", () => putDigit("4"), true);
+  addBtn("5", "", () => putDigit("5"), true);
+  addBtn("6", "", () => putDigit("6"), true);
+  addBtn("×", "btn-reset", clearInput);
+
+  addBtn("7", "", () => putDigit("7"), true);
+  addBtn("8", "", () => putDigit("8"), true);
+  addBtn("9", "", () => putDigit("9"), true);
+  addBtn("0", "", () => putDigit("0"), true);
+
+  const isFull = state.input.every((d, i) => state.locked[i] || (d !== "" && d !== null && d !== undefined));
+  subBtn.disabled = !isFull;
+}
+
+function putDigit(d) {
+  if (!isMyTurn()) return;
+  
+  let slot = state.cursor;
+  for (let k = 0; k < CODE_LEN; k++) {
+    const s = (slot + k) % CODE_LEN;
+    if (!state.locked[s] && !state.input[s]) { slot = s; break; }
+  }
+  
+  if (state.locked[slot] || state.input[slot]) return;
+  if (state.attempts.some(a => a.slot === slot && a.digit === d)) return;
+  
+  state.cursor = slot;
+  state.input[slot] = d;
+  moveCursorNext();
+  renderMyCode(); renderBoard(); renderPad();
+}
+
+function clearInput() {
+  if (!isMyTurn()) return;
+  for (let i = 0; i < CODE_LEN; i++) if (!state.locked[i]) state.input[i] = "";
+  state.cursor = 0;
+  moveCursorNext();
+  renderMyCode(); renderBoard(); renderPad();
+}
+
+function moveCursorNext() {
+  for (let k = 0; k < CODE_LEN; k++) {
+    const s = (state.cursor + k) % CODE_LEN;
+    if (!state.locked[s] && !state.input[s]) { state.cursor = s; return; }
   }
 }
 
-/* ============ ОБРАБОТЧИКИ ============ */
-el.pad.addEventListener('click', (e) => {
-  const btn = e.target.closest('button');
-  if (!btn || btn.disabled) return;
-  const val = btn.dataset.val;
-  if (val === 'submit') submitGuess();
-  else if (val === 'clear') clearInput();
-  else putDigit(val);
+function processMyGuess(guess, marks) {
+  state.lastGuess = guess;
+  state.lastMarks = marks;
+
+  for (let i = 0; i < CODE_LEN; i++) {
+    if (marks[i] === "green") {
+      state.locked[i] = true;
+      state.lockedDigits[i] = guess[i];
+    } else if (!state.locked[i]) {
+      state.attempts.push({ slot: i, digit: guess[i] });
+    }
+  }
+  
+  state.input = Array(CODE_LEN).fill("");
+  state.cursor = 0;
+  moveCursorNext();
+}
+
+function submitGuess() {
+  if (!isMyTurn()) return;
+  const isFull = state.input.every((d, i) => state.locked[i] || (d !== "" && d !== null && d !== undefined));
+  if (!isFull) return;
+
+  const guess = state.input.map((d, i) => state.locked[i] ? state.lockedDigits[i] : d).join("");
+  if (guess.length !== CODE_LEN || guess.includes("undefined")) return;
+
+  if (state.isOnline) {
+    socket.emit('make_guess', { roomId: state.roomId, guess });
+  } else {
+    const marks = scoreGuess(guess, state.secretBot);
+    processMyGuess(guess, marks);
+    render();
+
+    if (marks.every(m => m === "green")) { triggerGameOver(true); return; }
+
+    state.phase = "botTurn";
+    updateStatusUI();
+    if (botTimer) clearTimeout(botTimer);
+    botTimer = setTimeout(botTurn, BOT_THINK_DELAY);
+  }
+}
+
+/* ============ БОТ ============ */
+let botLockedDigits = Array(CODE_LEN).fill(null);
+
+function botTurn() {
+  if (state.isOnline || state.phase !== "botTurn") return;
+
+  let guess = "";
+  if (state.settings.difficulty === "hard" && state.botCandidates.length > 0) {
+    guess = state.botCandidates[Math.floor(Math.random() * state.botCandidates.length)];
+  } else {
+    let guessArr = Array(CODE_LEN).fill(null);
+    for (let i = 0; i < CODE_LEN; i++) if (botLockedDigits[i]) guessArr[i] = botLockedDigits[i];
+    for (let i = 0; i < CODE_LEN; i++) {
+      if (guessArr[i]) continue;
+      let available = DIGITS.filter(d => !state.botKnownWrong.has(d) && !guessArr.includes(d));
+      if (available.length === 0) available = DIGITS;
+      const d = available[Math.floor(Math.random() * available.length)];
+      guessArr[i] = d;
+    }
+    guess = guessArr.join("");
+  }
+
+  const marks = scoreGuess(guess, state.secretHuman);
+  for (let i = 0; i < CODE_LEN; i++) {
+    if (marks[i] === "green") { state.humanCodeStatus[i] = "green"; botLockedDigits[i] = guess[i]; }
+  }
+  for (let i = 0; i < CODE_LEN; i++) if (marks[i] === "gray") state.botKnownWrong.add(guess[i]);
+  if (state.settings.difficulty === "hard") state.botCandidates = state.botCandidates.filter(c => scoreGuess(guess, c).every((v, i) => v === marks[i]));
+
+  renderMyCode();
+  showOpponentMove(guess, marks);
+
+  if (marks.every(m => m === "green")) { triggerGameOver(false, state.secretHuman); return; }
+  
+  state.phase = "humanTurn";
+  updateStatusUI();
+  renderPad();
+}
+
+/* ============ КОНЕЦ ИГРЫ ============ */
+function triggerGameOver(isWin, secret) {
+  state.phase = "over";
+  currentStatusPhase = ""; 
+  updateStatusUI();
+  
+  document.body.classList.add("blur-active");
+  if (isWin) startConfetti();
+
+  setTimeout(() => {
+    el.confettiContainer.innerHTML = ""; 
+    
+    el.gameOverTitle.textContent = isWin ? "Победа!" : "Вы проиграли";
+    el.gameOverTitle.style.color = isWin ? "var(--green)" : "var(--red)";
+    
+    if (isWin) {
+      el.gameOverDesc.textContent = "Вы угадали секретный код!";
+      el.gameOverCode.style.display = "none";
+    } else {
+      el.gameOverDesc.innerHTML = `<b>${state.opponentName}</b> угадал ваш код`;
+      el.gameOverCode.textContent = secret || state.secretHuman;
+      el.gameOverCode.style.display = "block";
+    }
+
+    el.gameOverScreen.classList.remove("hidden");
+    
+    setTimeout(() => {
+      el.gameOverScreen.classList.add("fade-out");
+      setTimeout(() => { location.reload(); }, 1500);
+    }, 3000);
+
+  }, 1000);
+}
+
+function startConfetti() {
+  el.confettiContainer.innerHTML = "";
+  const colors = ["#ff0", "#0f0", "#00f", "#f0f", "#0ff"];
+  const interval = setInterval(() => {
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.left = Math.random() > 0.5 ? "-50px" : window.innerWidth + 50 + "px";
+    c.style.top = window.innerHeight * 0.3 + Math.random() * window.innerHeight * 0.6 + "px";
+    c.style.setProperty("--tx", (Math.random() > 0.5 ? 1 : -1) * window.innerWidth + "px");
+    c.style.setProperty("--ty", -window.innerHeight * (0.3 + Math.random() * 0.7) + "px");
+    c.style.setProperty("--rot", Math.random() * 720 - 360 + "deg");
+    el.confettiContainer.appendChild(c);
+  }, 50);
+  setTimeout(() => clearInterval(interval), 3500);
+}
+
+el.board.addEventListener("click", (e) => {
+  const cell = e.target.closest(".cell");
+  if (!cell || !isMyTurn()) return;
+  const index = Array.from(el.board.children).indexOf(cell);
+  if (state.locked[index]) return;
+
+  if (state.input[index]) { state.input[index] = ""; state.cursor = index; }
+  else { state.cursor = index; }
+  renderMyCode(); renderBoard(); renderPad();
 });
 </script>
 </body>

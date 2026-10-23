@@ -419,4 +419,126 @@ function showOpponentMove(guess, marks) {
   el.smsDigits.innerHTML = "";
   guess.split("").forEach((d, i) => {
     const c = document.createElement("div");
-    c.className = "sms-digit " + marks[i
+    c.className = "sms-digit " + marks[i];
+    c.textContent = d;
+    el.smsDigits.appendChild(c);
+  });
+  el.smsNotif.classList.add("show");
+  setTimeout(() => el.smsNotif.classList.remove("show"), 3000);
+}
+
+socket.on('game_over', (data) => {
+  if (data.winner === socket.id) {
+    alert("Поздравляем! Вы угадали код соперника!");
+  } else {
+    alert(`Вы проиграли. ${opponentName} угадал ваш код: ${data.code}`);
+  }
+  setTimeout(() => location.reload(), 3000);
+});
+
+/* ============ РЕНДЕР UI ============ */
+function renderMyCodeStatus(marks) {
+  el.myCodeDigits.innerHTML = "";
+  for (let i = 0; i < CODE_LEN; i++) {
+    const d = document.createElement("div");
+    d.className = "my-code-digit " + marks[i];
+    d.textContent = mySecretCode ? mySecretCode[i] : "-";
+    el.myCodeDigits.appendChild(d);
+  }
+}
+
+function renderBoard() {
+  el.board.innerHTML = "";
+  for (let i = 0; i < CODE_LEN; i++) {
+    const c = document.createElement("div");
+    c.className = "cell";
+    
+    if (locked[i]) {
+      c.classList.add("locked");
+      c.textContent = lockedDigits[i] ?? "";
+    } else if (input[i]) {
+      c.classList.add("filled");
+      c.textContent = input[i];
+    } else if (lastMarks[i] === "yellow" && lastGuess) {
+      c.classList.add("fade-yellow");
+      c.textContent = lastGuess[i];
+    } else if (lastMarks[i] === "gray") {
+      c.classList.add("fade-gray");
+      c.textContent = "•";
+    }
+
+    if (i === cursor && !locked[i]) c.classList.add("cursor");
+    el.board.appendChild(c);
+  }
+}
+
+function renderPad() {
+  el.pad.innerHTML = "";
+
+  const hints = {};
+  if (lastMarks && lastGuess) {
+    lastMarks.forEach((m, i) => {
+      if (m === "yellow") {
+        const d = lastGuess[i];
+        hints[d] = (hints[d] || 0) + 1;
+      }
+    });
+  }
+
+  const addBtn = (text, cls, fn, isDigit = false) => {
+    const b = document.createElement("button");
+    b.textContent = text;
+    if (cls) b.className = cls;
+    
+    if (isDigit) {
+      const isCursorEmpty = !locked[cursor] && !input[cursor];
+      if (isCursorEmpty) {
+          const isTriedInCursor = attempts.some(a => a.slot === cursor && a.digit === text);
+          if (isTriedInCursor) b.disabled = true;
+      }
+      if (!b.disabled && hints[text]) {
+        b.classList.add("hint-yellow");
+        b.setAttribute("data-hint", hints[text]);
+      }
+    }
+    b.addEventListener("click", () => { if(!b.disabled) fn(); });
+    el.pad.appendChild(b);
+    return b;
+  };
+
+  addBtn("1", "", () => putDigit("1"), true);
+  addBtn("2", "", () => putDigit("2"), true);
+  addBtn("3", "", () => putDigit("3"), true);
+  const subBtn = addBtn("✓", "btn-submit", submitGuess);
+  
+  addBtn("4", "", () => putDigit("4"), true);
+  addBtn("5", "", () => putDigit("5"), true);
+  addBtn("6", "", () => putDigit("6"), true);
+  addBtn("×", "btn-reset", clearInput);
+
+  addBtn("7", "", () => putDigit("7"), true);
+  addBtn("8", "", () => putDigit("8"), true);
+  addBtn("9", "", () => putDigit("9"), true);
+  addBtn("0", "", () => putDigit("0"), true);
+
+  const isFull = input.every((d, i) => locked[i] || d !== "");
+  subBtn.disabled = !isFull;
+}
+
+el.board.addEventListener("click", (e) => {
+  const cell = e.target.closest(".cell");
+  if (!cell || currentTurn !== socket.id) return;
+  const index = Array.from(el.board.children).indexOf(cell);
+  if (locked[index]) return;
+  if (input[index]) { input[index] = ""; cursor = index; }
+  else { cursor = index; }
+  renderBoard(); renderPad();
+});
+
+el.toggleCodeBtn.onclick = () => {
+  isCodeHidden = !isCodeHidden;
+  el.myCodeDigits.classList.toggle("hidden-code", isCodeHidden);
+};
+</script>
+</body>
+</html>

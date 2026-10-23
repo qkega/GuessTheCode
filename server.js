@@ -10,14 +10,12 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Простая "база данных" в файле
 const DB_FILE = path.join(__dirname, 'users.json');
 if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, '{}');
 
 function getUsers() { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
 function saveUsers(users) { fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2)); }
 
-// Состояние игры
 let waitingPlayer = null;
 const games = {};
 
@@ -42,20 +40,25 @@ function scoreGuess(guess, secret) {
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('register', (data, callback) => {
-    const { username, password } = data;
+  socket.on('auth', (data, callback) => {
+    const { username, password, isRegister } = data;
     const users = getUsers();
 
-    if (users[username]) {
-      if (users[username] === password) {
-        callback({ success: true });
+    if (isRegister) {
+      if (users[username]) {
+        callback({ success: false, msg: "Этот ник уже занят" });
       } else {
-        callback({ success: false, msg: "Неверный пароль" });
+        users[username] = password;
+        saveUsers(users);
+        callback({ success: true });
       }
     } else {
-      users[username] = password;
-      saveUsers(users);
-      callback({ success: true });
+      if (users[username]) {
+        if (users[username] === password) callback({ success: true });
+        else callback({ success: false, msg: "Неверный пароль" });
+      } else {
+        callback({ success: false, msg: "Пользователь не найден" });
+      }
     }
   });
 
@@ -64,7 +67,6 @@ io.on('connection', (socket) => {
     socket.secretCode = data.code;
 
     if (waitingPlayer && waitingPlayer.id !== socket.id) {
-      // Нашли соперника
       const roomId = `room_${waitingPlayer.id}_${socket.id}`;
       socket.join(roomId);
       waitingPlayer.join(roomId);
@@ -73,8 +75,8 @@ io.on('connection', (socket) => {
       const p2 = socket;
 
       games[roomId] = {
-        p1: { id: p1.id, username: p1.username, code: p1.secretCode, history: [] },
-        p2: { id: p2.id, username: p2.username, code: p2.secretCode, history: [] },
+        p1: { id: p1.id, username: p1.username, code: p1.secretCode },
+        p2: { id: p2.id, username: p2.username, code: p2.secretCode },
         turn: p1.id
       };
 
@@ -102,8 +104,6 @@ io.on('connection', (socket) => {
     const me = isP1 ? game.p1 : game.p2;
 
     const marks = scoreGuess(guess, opponent.code);
-    me.history.push({ guess, marks });
-
     const isWin = marks.every(m => m === "green");
     game.turn = opponent.id;
 

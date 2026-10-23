@@ -10,7 +10,7 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 
 let waitingPlayer = null;
-const privateRooms = {}; // { roomCode: { host: socketId, hostName: name, hostCode: code } }
+const privateRooms = {}; // { roomCode: { hostId, hostName, hostCode } }
 const activeGames = {};  // { roomId: { p1: {...}, p2: {...}, turn: socketId } }
 
 function scoreGuess(guess, secret) {
@@ -103,6 +103,7 @@ io.on('connection', (socket) => {
       return;
     }
 
+    socket.username = data.username;
     activeGames[roomId] = {
       p1: { id: hostSocket.id, username: room.hostName, code: room.hostCode },
       p2: { id: socket.id, username: data.username, code: data.code },
@@ -114,6 +115,10 @@ io.on('connection', (socket) => {
     });
 
     delete privateRooms[code];
+  });
+
+  socket.on('chat_message', (data) => {
+    io.to(data.roomId).emit('chat_message', { username: data.username, text: data.text });
   });
 
   socket.on('make_guess', (data) => {
@@ -142,7 +147,6 @@ io.on('connection', (socket) => {
     if (waitingPlayer && waitingPlayer.id === socket.id) {
       waitingPlayer = null;
     }
-    // Очистка приватных комнат при выходе создателя
     for (const [code, room] of Object.entries(privateRooms)) {
       if (room.hostId === socket.id) delete privateRooms[code];
     }

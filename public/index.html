@@ -88,7 +88,7 @@
   .cell.fade-yellow { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3); color: var(--yellow); }
   .cell.fade-gray { background: var(--gray); border-color: var(--line); color: transparent; opacity: 0.5; }
 
-  .pad-container { width: 100%; max-width: 380px; margin-top: 20px; height: 186px; position: relative; }
+  .pad-container { width: 100%; max-width: 380px; margin-top: 24px; height: 186px; position: relative; }
   .pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; position: absolute; top: 0; left: 0; }
   .pad button { position: relative; padding: 16px 0; font-size: 24px; font-family: inherit; font-weight: 900; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: transform 0.1s, background 0.1s; }
   .pad button:active:not(:disabled) { transform: scale(0.9); background: var(--line); }
@@ -103,16 +103,7 @@
   .btn-reset { background: rgba(239, 68, 68, 0.15) !important; border-color: var(--red) !important; color: var(--red) !important; font-size: 26px !important; }
   .btn-reset:active:not(:disabled) { background: rgba(239, 68, 68, 0.3) !important; }
 
-  /* SMS (Ход соперника) */
-  .sms-notification {
-    position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150%);
-    width: 90%; max-width: 360px; background: rgba(30, 35, 48, 0.98);
-    border: 1px solid var(--line); border-radius: 16px; padding: 16px;
-    display: flex; flex-direction: column; gap: 10px; align-items: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 100; pointer-events: none;
-  }
+  .sms-notification { position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150%); width: 90%; max-width: 360px; background: rgba(30, 35, 48, 0.98); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; pointer-events: none; }
   .sms-notification.show { transform: translate(-50%, 0); pointer-events: auto; }
   .sms-header { display: flex; justify-content: space-between; width: 100%; align-items: center; }
   .sms-title { font-size: 13px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
@@ -124,7 +115,6 @@
   .sms-digit.gray { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
   .sms-hint { font-size: 12px; color: var(--muted); font-weight: 700; }
 
-  /* ЧАТ И НАСТРОЙКИ */
   .chat-modal, .settings-modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
   .chat-modal.open, .settings-modal.open { pointer-events: auto; opacity: 1; }
   .modal-box { width: 92%; max-width: 400px; background: rgba(25, 28, 40, 0.95); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 24px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); transform: scale(0.9); transition: transform 0.3s; }
@@ -146,7 +136,6 @@
   .setting-row select { background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-weight: 700; outline: none; cursor: pointer; }
   .btn-save { background: var(--accent); color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: 900; font-family: inherit; font-size: 16px; cursor: pointer; margin-top: 10px; }
 
-  /* ЭКРАНЫ МЕНЮ */
   .menu-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
   .menu-box { background: var(--panel); padding: 24px; border-radius: 24px; border: 1px solid var(--line); width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   .menu-box h2 { margin: 0 0 10px 0; font-size: 22px; text-align: center; font-weight: 900; color: var(--text); }
@@ -353,6 +342,7 @@ const state = {
   currentTurn: null, 
   opponentName: "БОТ",
   gameMode: "",
+  targetRoomCode: "",
 
   secretHuman: null, secretBot: null,
   lastMarks: Array(CODE_LEN).fill(""), 
@@ -436,7 +426,7 @@ function openModal(id) { document.getElementById(id).classList.remove("hidden");
 
 function openOnlineMenu() {
   const nick = el.nickInput.value.trim();
-  if (!/^[a-zA-Z0-9_-]{3,15}$/.test(nick)) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">Ник: от 3 до 15 символов (латиница, цифры)</span>`); return; }
+  if (!/^[a-zA-Z0-9_-]{3,15}$/.test(nick)) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold; font-size:14px;">Ник: от 3 до 15 символов</span>`); return; }
   state.myUsername = nick;
   localStorage.setItem("gc_nick", nick);
   closeMenu("main-menu");
@@ -464,7 +454,7 @@ function randomizeModal() { Array.from(el.modalInputs.children).forEach(inp => i
 
 function confirmCode() {
   const code = Array.from(el.modalInputs.children).map(inp => inp.value.trim()).join("");
-  if (code.length !== CODE_LEN) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">Введи все 6 цифр!</span>`); return; }
+  if (code.length !== CODE_LEN) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold; font-size:14px;">Введи все 6 цифр!</span>`); return; }
   
   state.secretHuman = code;
   closeModal("code-screen");
@@ -495,7 +485,7 @@ function showJoinInput() {
 
 function submitJoin() {
   const code = document.getElementById("join-code-input").value.trim().toUpperCase();
-  if (code.length !== 6) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">Код должен быть 6 символов</span>`); return; }
+  if (code.length !== 6) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold; font-size:14px;">Код должен быть 6 символов</span>`); return; }
   state.targetRoomCode = code;
   closeModal("join-screen");
   showCodeInput("join");
@@ -557,7 +547,7 @@ el.smsNotif.addEventListener("click", () => el.smsNotif.classList.remove("show")
 /* ============ ИГРА ============ */
 function startBotGame() {
   const nick = el.nickInput.value.trim();
-  if (!/^[a-zA-Z0-9_-]{3,15}$/.test(nick)) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">Ник: от 3 до 15 символов</span>`); return; }
+  if (!/^[a-zA-Z0-9_-]{3,15}$/.test(nick)) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold; font-size:14px;">Ник: от 3 до 15 символов</span>`); return; }
   state.myUsername = nick;
   localStorage.setItem("gc_nick", nick);
 
@@ -583,7 +573,7 @@ socket.on('room_created', (data) => {
 });
 
 socket.on('err_msg', (msg) => {
-  showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold;">${msg}</span>`);
+  showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold; font-size:14px;">${msg}</span>`);
   setTimeout(() => location.reload(), 3000);
 });
 
@@ -595,8 +585,6 @@ socket.on('game_start', (data) => {
   state.phase = "online";
 
   closeMenu("waiting-screen");
-  state.secretHuman = state.secretHuman; // Уже задан
-  
   initGameUI();
   el.chatHistory.innerHTML = "";
 });
@@ -609,6 +597,8 @@ socket.on('guess_result', (data) => {
   }
   state.currentTurn = data.nextTurn;
   updateStatusUI();
+  renderBoard();
+  renderPad();
 });
 
 socket.on('game_over', (data) => {
@@ -644,7 +634,9 @@ function initGameUI() {
 }
 
 function isMyTurn() {
-  return state.isOnline ? (state.currentTurn === socket.id) : (state.phase === "humanTurn");
+  if (state.phase === "over") return false;
+  if (state.isOnline) return state.currentTurn === socket.id;
+  return state.phase === "humanTurn";
 }
 
 function updateStatusUI() {

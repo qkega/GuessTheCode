@@ -10,8 +10,8 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 
 let waitingPlayer = null;
-const privateRooms = {}; // { roomCode: { hostId, hostName, hostCode } }
-const activeGames = {};  // { roomId: { p1: {...}, p2: {...}, turn: socketId } }
+const privateRooms = {}; 
+const activeGames = {};  
 
 function scoreGuess(guess, secret) {
   const len = 6;
@@ -138,7 +138,7 @@ io.on('connection', (socket) => {
     });
 
     if (isWin) {
-      io.to(roomId).emit('game_over', { winner: socket.id, code: opponent.code, winnerName: socket.username });
+      io.to(roomId).emit('game_over', { winner: socket.id, code: opponent.code });
       delete activeGames[roomId];
     }
   });

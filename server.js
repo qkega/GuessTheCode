@@ -16,10 +16,10 @@ const TG_BOT_TOKEN = '8892435569:AAHXI7glTlWde8tc2GY2BAAO96LzaIjbhBo';
 const TG_CHAT_ID = '8052527190';
 
 let waitingQueue = [];
-const pendingMatches = {}; // roomId -> { p1, p2, p1Accepted, p2Accepted }
-const activeGames = {};    // roomId -> { p1: {...}, p2: {...}, turn }
-const privateRooms = {};   // roomCode -> { hostId, hostName, hostCode }
-const rematchRequests = {};// roomId -> { p1: false, p2: false }
+const pendingMatches = {}; 
+const activeGames = {};    
+const privateRooms = {};   
+const rematchRequests = {}; // roomId -> { p1: false, p2: false, p1Code: null, p2Code: null }
 
 function scoreGuess(guess, secret) {
   const len = 6;
@@ -38,10 +38,6 @@ function scoreGuess(guess, secret) {
   return marks;
 }
 
-function genCode() {
-  let c = ''; for (let i = 0; i < 6; i++) c += Math.floor(Math.random() * 10); return c;
-}
-
 function generateRoomCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let code = ""; for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length)); return code;
@@ -53,7 +49,6 @@ io.on('connection', (socket) => {
     socket.username = data.username;
     socket.secretCode = data.code;
 
-    // Try to match with someone in queue
     while (waitingQueue.length > 0) {
       const opponent = waitingQueue.shift();
       if (opponent.connected && opponent.id !== socket.id) {
@@ -65,7 +60,6 @@ io.on('connection', (socket) => {
         return;
       }
     }
-    // No match, add to queue
     waitingQueue.push(socket);
     socket.emit('waiting_random');
   });
@@ -169,7 +163,7 @@ io.on('connection', (socket) => {
   socket.on('rematch_accept', (data) => {
     const game = activeGames[data.roomId];
     if (!game) return;
-    if (!rematchRequests[data.roomId]) rematchRequests[data.roomId] = { p1: false, p2: false };
+    if (!rematchRequests[data.roomId]) rematchRequests[data.roomId] = { p1: false, p2: false, p1Code: null, p2Code: null };
 
     if (socket.id === game.p1.id) rematchRequests[data.roomId].p1 = true;
     else rematchRequests[data.roomId].p2 = true;
@@ -177,20 +171,31 @@ io.on('connection', (socket) => {
     socket.emit('rematch_waiting');
 
     if (rematchRequests[data.roomId].p1 && rematchRequests[data.roomId].p2) {
-      // Generate new codes
-      game.p1.code = genCode();
-      game.p2.code = genCode();
-      game.turn = game.p1.id;
+      io.to(data.roomId).emit('rematch_ready_for_codes');
+    } else {
+      socket.to(data.roomId).emit('rematch_opponent_accepted');
+    }
+  });
 
-      io.to(game.p1.id).emit('new_secret_code', { code: game.p1.code });
-      io.to(game.p2.id).emit('new_secret_code', { code: game.p2.code });
+  socket.on('rematch_submit_code', (data) => {
+    const req = rematchRequests[data.roomId];
+    const game = activeGames[data.roomId];
+    if (!req || !game) return;
+
+    if (socket.id === game.p1.id) req.p1Code = data.code;
+    else req.p2Code = data.code;
+
+    socket.emit('rematch_waiting');
+
+    if (req.p1Code && req.p2Code) {
+      game.p1.code = req.p1Code;
+      game.p2.code = req.p2Code;
+      game.turn = game.p1.id;
 
       io.to(data.roomId).emit('game_start', {
         roomId: data.roomId, p1_name: game.p1.username, p2_name: game.p2.username, turn: game.p1.id, restart: true
       });
       delete rematchRequests[data.roomId];
-    } else {
-      socket.to(data.roomId).emit('rematch_opponent_accepted');
     }
   });
 

@@ -2,38 +2,20 @@ const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const path = require('path');
+const axios = require('axios');
 
 const app = express();
+app.set('trust proxy', true); // Для получения реального IP на Render
 const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// --- БЕЗОПАСНАЯ ОТПРАВКА В TELEGRAM ---
-app.post('/api/feedback', async (req, res) => {
-  const { nick, text } = req.body;
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const time = new Date().toLocaleString('ru-RU');
-  
-  const message = `[${nick || 'Аноним'}], [${time}], [${ip}]\nТекст: ${text}`;
-  const token = process.env.TG_TOKEN || '8892435569:AAHXI7glTlWde8tc2GY2BAAO96LzaIjbhBo';
-  const chatId = process.env.TG_CHAT_ID || '8052527190';
-  
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: message })
-    });
-    if (response.ok) res.json({ success: true });
-    else res.status(500).json({ success: false });
-  } catch (e) {
-    res.status(500).json({ success: false });
-  }
-});
+// Конфигурация Telegram (скрыто от клиента)
+const TG_BOT_TOKEN = '8892435569:AAHXI7glTlWde8tc2GY2BAAO96LzaIjbhBo';
+const TG_CHAT_ID = '8052527190';
 
-// --- ИГРОВАЯ ЛОГИКА ---
 let waitingPlayer = null;
 const privateRooms = {}; 
 const activeGames = {};  
@@ -47,7 +29,13 @@ function scoreGuess(guess, secret) {
   for (let i = 0; i < len; i++) {
     if (guess[i] === secret[i]) { marks[i] = "green"; secretLeft[i] = false; guessLeft[i] = false; }
   }
-  return marks; // Убрали желтые подсказки, только green и gray
+  for (let i = 0; i < len; i++) {
+    if (!guessLeft[i]) continue;
+    for (let j = 0; j < len; j++) {
+      if (secretLeft[j] && secret[j] === guess[i]) { marks[i] = "yellow"; secretLeft[j] = false; break; }
+    }
+  }
+  return marks;
 }
 
 function generateRoomCode() {
@@ -71,8 +59,8 @@ io.on('connection', (socket) => {
       const p2 = socket;
 
       activeGames[roomId] = {
-        p1: { id: p1.id, username: p1.username, code: p1.secretCode, wantsRematch: false },
-        p2: { id: p2.id, username: p2.username, code: p2.secretCode, wantsRematch: false },
+        p1: { id: p1.id, username: p1.username, code: p1.secretCode },
+        p2: { id: p2.id, username: p2.username, code: p2.secretCode },
         turn: p1.id
       };
 
@@ -103,19 +91,29 @@ io.on('connection', (socket) => {
     const code = data.roomCode.toUpperCase();
     const room = privateRooms[code];
 
-    if (!room) { socket.emit('err_msg', "Комната не найдена."); return; }
-    if (room.hostId === socket.id) { socket.emit('err_msg', "Вы не можете войти в свою же комнату."); return; }
+    if (!room) {
+      socket.emit('err_msg', "Комната не найдена. Проверьте код.");
+      return;
+    }
+    if (room.hostId === socket.id) {
+      socket.emit('err_msg', "Вы не можете войти в свою же комнату.");
+      return;
+    }
 
     const roomId = `private_${code}`;
     socket.join(roomId);
     const hostSocket = io.sockets.sockets.get(room.hostId);
 
-    if (!hostSocket) { socket.emit('err_msg', "Создатель комнаты отключился."); delete privateRooms[code]; return; }
+    if (!hostSocket) {
+      socket.emit('err_msg', "Создатель комнаты отключился.");
+      delete privateRooms[code];
+      return;
+    }
 
     socket.username = data.username;
     activeGames[roomId] = {
-      p1: { id: hostSocket.id, username: room.hostName, code: room.hostCode, wantsRematch: false },
-      p2: { id: socket.id, username: data.username, code: data.code, wantsRematch: false },
+      p1: { id: hostSocket.id, username: room.hostName, code: room.hostCode },
+      p2: { id: socket.id, username: data.username, code: data.code },
       turn: hostSocket.id
     };
 
@@ -142,74 +140,92 @@ io.on('connection', (socket) => {
     const isWin = marks.every(m => m === "green");
     game.turn = opponent.id;
 
-    io.to(roomId).emit('guess_result', { guess, marks, isWin, nextTurn: opponent.id, player: socket.id });
+    io.to(roomId).emit('guess_result', {
+      guess, marks, isWin, nextTurn: opponent.id, player: socket.id
+    });
 
     if (isWin) {
-      game.winner = socket.id;
-      game.winningCode = opponent.code;
-      game.loserCode = socket.id === game.p1.id ? game.p2.code : game.p1.code; // Код победителя (для проигравшего)
       io.to(roomId).emit('game_over', { winner: socket.id, code: opponent.code });
+      // Не удаляем игру сразу, чтобы можно было запросить реванш
+      game.over = true;
     }
   });
 
   socket.on('rematch_request', (data) => {
     const game = activeGames[data.roomId];
     if (!game) return;
-    const isP1 = socket.id === game.p1.id;
-    if (isP1) game.p1.wantsRematch = true;
-    else game.p2.wantsRematch = true;
-
-    const opponent = isP1 ? game.p2 : game.p1;
-    io.to(opponent.id).emit('rematch_offered', { from: socket.username });
-
-    if (game.p1.wantsRematch && game.p2.wantsRematch) {
-      // Начинаем заново
-      game.p1.code = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join("");
-      game.p2.code = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join("");
-      game.p1.wantsRematch = false;
-      game.p2.wantsRematch = false;
-      game.winner = null;
-      game.turn = game.p1.id;
-      
-      io.to(data.roomId).emit('game_start', {
-        roomId: data.roomId, p1_name: game.p1.username, p2_name: game.p2.username, turn: game.p1.id
-      });
-    }
+    socket.to(data.roomId).emit('rematch_requested', { from: socket.username });
   });
 
-  socket.on('rematch_decline', (data) => {
+  socket.on('rematch_response', (data) => {
     const game = activeGames[data.roomId];
     if (!game) return;
-    const opponent = socket.id === game.p1.id ? game.p2 : game.p1;
-    io.to(opponent.id).emit('rematch_declined');
-    delete activeGames[data.roomId];
-  });
 
-  socket.on('leave_game', (data) => {
-    const game = activeGames[data.roomId];
-    if (game) {
-      const opponent = socket.id === game.p1.id ? game.p2 : game.p1;
-      io.to(opponent.id).emit('opponent_left');
+    if (data.accept) {
+      game.turn = game.p1.id;
+      game.over = false;
+      io.to(data.roomId).emit('game_start', {
+        roomId: data.roomId, 
+        p1_name: game.p1.username, 
+        p2_name: game.p2.username, 
+        turn: game.p1.id
+      });
+    } else {
+      io.to(data.roomId).emit('rematch_declined', { by: socket.username });
       delete activeGames[data.roomId];
     }
   });
 
-  socket.on('disconnect', () => {
-    if (waitingPlayer && waitingPlayer.id === socket.id) waitingPlayer = null;
-    
-    for (const [roomId, game] of Object.entries(activeGames)) {
-      if (game.p1.id === socket.id || game.p2.id === socket.id) {
-        const opponent = game.p1.id === socket.id ? game.p2 : game.p1;
-        io.to(opponent.id).emit('opponent_left');
-        delete activeGames[roomId];
-        break;
-      }
+  socket.on('leave_game', (data) => {
+    const { roomId } = data;
+    if (activeGames[roomId]) {
+      socket.to(roomId).emit('opponent_left');
+      delete activeGames[roomId];
     }
-    
+  });
+
+  socket.on('disconnect', () => {
+    if (waitingPlayer && waitingPlayer.id === socket.id) {
+      waitingPlayer = null;
+    }
     for (const [code, room] of Object.entries(privateRooms)) {
       if (room.hostId === socket.id) delete privateRooms[code];
     }
+    for (const [roomId, game] of Object.entries(activeGames)) {
+      if (game.p1.id === socket.id || game.p2.id === socket.id) {
+        io.to(roomId).emit('opponent_left');
+        delete activeGames[roomId];
+      }
+    }
   });
+});
+
+// --- FEEDBACK API ---
+app.post('/api/feedback', async (req, res) => {
+  const { nick, text, time } = req.body;
+  let ip = req.ip || req.socket.remoteAddress;
+  if (ip === '::1' || ip === '::ffff:127.0.0.1') ip = '127.0.0.1'; // Localhost
+
+  let location = "Unknown";
+  try {
+    const geoRes = await axios.get(`http://ip-api.com/json/${ip}?fields=country,city`);
+    if (geoRes.data.status === 'success') {
+      location = `${geoRes.data.country}, ${geoRes.data.city}`;
+    }
+  } catch (e) { console.log("Geo error", e.message); }
+
+  const message = `Ник отправителя: ${nick}\nВремя: ${time}\nМесто: ${location}\nIP: ${ip}\nТекст: ${text}`;
+
+  try {
+    await axios.post(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+      chat_id: TG_CHAT_ID,
+      text: message
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("TG Error", error.message);
+    res.status(500).json({ success: false });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

@@ -17,8 +17,6 @@
     --green: #10b981; 
     --green-inactive: #064e3b; 
     --green-glow: rgba(16, 185, 129, 0.4);
-    --yellow: #f59e0b; 
-    --yellow-glow: rgba(245, 158, 11, 0.4);
     --red: #ef4444;
     --gray: #2a3042;
     --status-human: #06b6d4; 
@@ -74,7 +72,6 @@
   .my-code-digits.hidden-code { filter: blur(6px); opacity: 0.5; }
   .my-code-digit { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; background: var(--line); border-radius: 6px; transition: all 0.3s; }
   .my-code-digit.green { background: var(--green); color: #000; box-shadow: 0 0 10px var(--green-glow); }
-  .my-code-digit.yellow { background: var(--yellow); color: #fff; box-shadow: 0 0 10px var(--yellow-glow); }
   .my-code-digit.gray { color: var(--muted); }
 
   .eye-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
@@ -108,7 +105,6 @@
   .sms-digits { display: flex; gap: 8px; margin: 4px 0; }
   .sms-digit { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; border-radius: 10px; background: var(--line); color: var(--text); }
   .sms-digit.green { background: var(--green); color: #000; box-shadow: 0 0 10px var(--green-glow); }
-  .sms-digit.yellow { background: var(--yellow); color: #fff; box-shadow: 0 0 10px var(--yellow-glow); }
   .sms-digit.gray { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
   .sms-hint { font-size: 12px; color: var(--muted); font-weight: 700; }
 
@@ -134,6 +130,13 @@
   .setting-row { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 15px; }
   .setting-row select { background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-weight: 700; outline: none; cursor: pointer; }
   .btn-save { background: var(--accent); color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: 900; font-family: inherit; font-size: 16px; cursor: pointer; margin-top: 10px; }
+  .btn-test { background: var(--line); color: var(--text); border: none; padding: 10px 16px; border-radius: 8px; font-weight: 800; font-family: inherit; cursor: pointer; font-size: 14px; }
+  .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--line); transition: .4s; border-radius: 24px; }
+  .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: var(--green); }
+  input:checked + .slider:before { transform: translateX(20px); }
 
   /* МЕНЮ И ФУТЕР */
   .menu-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
@@ -304,7 +307,8 @@
       <h3>Настройки</h3>
       <button class="close-btn" onclick="closeSettings()">×</button>
     </div>
-    <div class="settings-content">
+    <div class="settings-content" style="max-height: 70vh; overflow-y: auto;">
+      
       <div class="setting-row">
         <span>Сложность бота</span>
         <select id="setting-difficulty" onchange="saveSettings()">
@@ -312,11 +316,11 @@
           <option value="hard" selected>Профи</option>
         </select>
       </div>
+
       <div class="setting-row">
         <span>Цвет интерфейса</span>
         <select id="setting-color" onchange="saveSettings()">
           <option value="#3b82f6">Синий</option>
-          <option value="#2563eb">Темно-синий</option>
           <option value="#06b6d4">Голубой</option>
           <option value="#14b8a6">Бирюзовый</option>
           <option value="#10b981">Зеленый</option>
@@ -332,10 +336,37 @@
           <option value="#a855f7">Фиолетовый</option>
           <option value="#8b5cf6">Сиреневый</option>
           <option value="#6366f1">Индиго</option>
-          <option value="#ffffff">Белый</option>
           <option value="#9ca3af">Серый</option>
         </select>
       </div>
+
+      <div style="border-top: 1px solid var(--line); margin: 5px 0;"></div>
+      <div style="font-weight: 900; font-size: 14px; color: var(--muted); margin-bottom: 5px;">Звуки</div>
+
+      <div class="setting-row">
+        <span>Победа / Поражение</span>
+        <label class="toggle-switch"><input type="checkbox" id="sound-win" onchange="saveSettings()"><span class="slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <span>Смена хода</span>
+        <label class="toggle-switch"><input type="checkbox" id="sound-switch" onchange="saveSettings()"><span class="slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <span>Новое сообщение</span>
+        <label class="toggle-switch"><input type="checkbox" id="sound-msg" onchange="saveSettings()"><span class="slider"></span></label>
+      </div>
+
+      <div style="border-top: 1px solid var(--line); margin: 5px 0;"></div>
+
+      <div class="setting-row">
+        <span>Пинг до сервера</span>
+        <button class="btn-test" onclick="testPing()">Проверить</button>
+      </div>
+      <div class="setting-row" style="font-size: 13px; color: var(--muted);">
+        <span>Результат:</span>
+        <span id="ping-result">-</span>
+      </div>
+
       <button class="btn-save" onclick="closeSettings()">Сохранить</button>
     </div>
   </div>
@@ -415,6 +446,25 @@ const CODE_LEN = 6;
 const DIGITS = "0123456789".split("");
 const BOT_THINK_DELAY = 1000; 
 const SMS_SHOW_TIME = 3000;   
+
+// ==== АУДИО ====
+const sounds = {
+  win: new Audio('/sounds/win.mp3'),
+  lose: new Audio('/sounds/lose.mp3'),
+  switch: new Audio('/sounds/switch.mp3'),
+  msg: new Audio('/sounds/new-msg.mp3')
+};
+Object.values(sounds).forEach(a => { a.preload = 'auto'; a.load(); });
+
+function playSound(key) {
+  if (!localStorage.getItem("gc_snd_" + key) || localStorage.getItem("gc_snd_" + key) === "true") {
+    const sound = sounds[key];
+    if (sound) {
+      sound.currentTime = 0;
+      sound.play().catch(e => console.log("Audio play error:", e));
+    }
+  }
+}
 
 const state = {
   isOnline: false,
@@ -501,6 +551,12 @@ el.settingDifficulty.value = localStorage.getItem("gc_diff") || "hard";
 const savedColor = localStorage.getItem("gc_color") || "#3b82f6";
 el.settingColor.value = savedColor;
 document.documentElement.style.setProperty('--accent', savedColor);
+
+// Восстановление настроек звука
+["win", "switch", "msg"].forEach(k => {
+  const val = localStorage.getItem("gc_snd_" + k);
+  document.getElementById("sound-" + k).checked = (val === null || val === "true");
+});
 
 el.nickInput.addEventListener("input", (e) => {
   e.target.value = e.target.value.replace(/[^a-zA-Zа-яА-Я0-9_-]/g, "");
@@ -629,16 +685,30 @@ async function pasteRoomCode() {
   } catch (e) {}
 }
 
-/* ============ НАСТРОЙКИ, ЧАТ, ФИДБЕК ============ */
+/* ============ НАСТРОЙКИ ============ */
 function openSettings() { document.body.classList.add("blur-active"); el.settingsModal.classList.add("open"); }
 function closeSettings() { document.body.classList.remove("blur-active"); el.settingsModal.classList.remove("open"); }
 function saveSettings() {
   localStorage.setItem("gc_diff", el.settingDifficulty.value);
   localStorage.setItem("gc_color", el.settingColor.value);
   document.documentElement.style.setProperty('--accent', el.settingColor.value);
+  localStorage.setItem("gc_snd_win", document.getElementById("sound-win").checked);
+  localStorage.setItem("gc_snd_switch", document.getElementById("sound-switch").checked);
+  localStorage.setItem("gc_snd_msg", document.getElementById("sound-msg").checked);
   renderPad();
 }
 
+function testPing() {
+  const start = Date.now();
+  document.getElementById("ping-result").textContent = "Измерение...";
+  socket.emit('ping_test');
+  socket.once('pong_test', () => {
+    const ms = Date.now() - start;
+    document.getElementById("ping-result").textContent = ms + " мс";
+  });
+}
+
+/* ============ ЧАТ И ОБРАТНАЯ СВЯЗЬ ============ */
 function openChat() { document.body.classList.add("blur-active"); el.chatModal.classList.add("open"); state.unreadCount = 0; updateBadge(); setTimeout(() => el.chatInput.focus(), 300); }
 function closeChat() { document.body.classList.remove("blur-active"); el.chatModal.classList.remove("open"); }
 function updateBadge() {
@@ -685,6 +755,7 @@ async function sendFeedback() {
 
 /* ============ СМС УВЕДОМЛЕНИЯ ============ */
 function showSMS(title, contentHtml) {
+  playSound('msg'); // Звук при получении СМС
   el.smsTitle.textContent = title;
   el.smsDigits.innerHTML = contentHtml;
   el.smsNotif.classList.add("show");
@@ -697,8 +768,8 @@ function showOpponentMove(guess, marks) {
   guess.split("").forEach((d, i) => {
     let bg = "var(--line)"; let color = "var(--text)";
     if (marks[i] === "green") { bg = "var(--green)"; color = "#000"; }
-    if (marks[i] === "yellow") { bg = "var(--yellow)"; color = "#000"; }
-    html += `<div class="sms-digit" style="background:${bg}; color:${color};">${d}</div>`;
+    else if (marks[i] === "yellow") { bg = "transparent"; color = "var(--muted)"; } // Убрали желтый фон
+    html += `<div class="sms-digit" style="background:${bg}; color:${color}; border: 1px solid var(--line);">${d}</div>`;
   });
   showSMS(`Ход ${state.opponentName}`, html);
 }
@@ -907,6 +978,11 @@ function updateStatusUI() {
   let phaseString = isMyTurn() ? "humanTurn" : "botTurn";
   if (state.phase === "over") phaseString = "over";
   if (currentStatusPhase === phaseString) return;
+  
+  // Звук смены хода (если фаза действительно изменилась)
+  if (currentStatusPhase !== "") {
+    playSound('switch');
+  }
   currentStatusPhase = phaseString;
 
   el.statusContainer.innerHTML = "";
@@ -1125,6 +1201,10 @@ function triggerGameOver(isWin, secret) {
   updateStatusUI();
   
   document.body.classList.add("blur-active");
+  
+  // Воспроизводим звук
+  playSound(isWin ? 'win' : 'lose');
+
   if (isWin) startConfetti();
 
   setTimeout(() => {

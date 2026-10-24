@@ -112,7 +112,7 @@
   .sms-digit.gray { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
   .sms-hint { font-size: 12px; color: var(--muted); font-weight: 700; }
 
-  /* MODALS (Fixed z-index) */
+  /* MODALS */
   .chat-modal, .settings-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
   .chat-modal.open, .settings-modal.open { pointer-events: auto; opacity: 1; }
   .modal-box { width: 92%; max-width: 400px; background: rgba(25, 28, 40, 0.95); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 24px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); transform: scale(0.9); transition: transform 0.3s; }
@@ -135,6 +135,7 @@
   .setting-row select { background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-weight: 700; outline: none; cursor: pointer; }
   .btn-save { background: var(--accent); color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: 900; font-family: inherit; font-size: 16px; cursor: pointer; margin-top: 10px; }
 
+  /* МЕНЮ И ФУТЕР */
   .menu-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
   .menu-box { background: var(--panel); padding: 24px; border-radius: 24px; border: 1px solid var(--line); width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   .menu-box h2 { margin: 0 0 10px 0; font-size: 22px; text-align: center; font-weight: 900; color: var(--text); }
@@ -147,8 +148,9 @@
   .room-code-display svg { width: 24px; height: 24px; fill: var(--muted); cursor: pointer; transition: 0.2s; }
   .room-code-display svg:hover { fill: var(--accent); }
 
-  .menu-footer { position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 12px; }
-  .footer-btn { width: 48px; height: 48px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); transition: 0.2s; }
+  /* ФУТЕР ТЕПЕРЬ ВНУТРИ MENU-BOX */
+  .menu-footer { display: flex; justify-content: center; gap: 12px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--line); }
+  .footer-btn { width: 48px; height: 48px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); transition: 0.2s; }
   .footer-btn:hover { color: var(--text); border-color: var(--accent); }
   .footer-btn svg { width: 24px; height: 24px; fill: currentColor; }
 
@@ -195,17 +197,19 @@
     <input type="text" id="nick-input" class="menu-input" placeholder="Ваш ник" maxlength="12">
     <button class="menu-btn primary" onclick="openOnlineMenu()">Играть по сети</button>
     <button class="menu-btn" onclick="startBotGame()">Играть с ботом</button>
-  </div>
-  <div class="menu-footer">
-    <button class="footer-btn" onclick="openSettings()">
-      <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
-    </button>
-    <button class="footer-btn" onclick="showSMS('Донат', '<span style=\'font-size:14px;\'>Механика доната скоро появится!</span>')" title="Донат">
-      <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-    </button>
-    <button class="footer-btn" onclick="openFeedback()" title="Обратная связь">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-    </button>
+    
+    <!-- Кнопки перенесены внутрь рамки -->
+    <div class="menu-footer">
+      <button class="footer-btn" onclick="openSettings()">
+        <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+      </button>
+      <button class="footer-btn" onclick="showSMS('Донат', '<span style=\'font-size:14px;\'>Механика доната скоро появится!</span>')" title="Донат">
+        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </button>
+      <button class="footer-btn" onclick="openFeedback()" title="Обратная связь">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -246,7 +250,6 @@
   </div>
 </div>
 
-<!-- ОКНО ПОДТВЕРЖДЕНИЯ СОПЕРНИКА -->
 <div class="modal hidden" id="found-modal">
   <div class="modal-content">
     <h2>Соперник найден!</h2>
@@ -273,7 +276,6 @@
   </div>
 </div>
 
-<!-- МОДАЛКА ОБРАТНОЙ СВЯЗИ -->
 <div class="modal hidden" id="feedback-modal">
   <div class="modal-content">
     <h2>Обратная связь</h2>
@@ -286,7 +288,6 @@
   </div>
 </div>
 
-<!-- МОДАЛКА РЕВАНША -->
 <div class="modal hidden" id="rematch-modal">
   <div class="modal-content">
     <h2 id="rematch-title">Сыграть ещё раз?</h2>
@@ -299,7 +300,6 @@
   </div>
 </div>
 
-<!-- НАСТРОЙКИ -->
 <div class="settings-modal" id="settings-modal">
   <div class="modal-box">
     <div class="modal-header">
@@ -343,7 +343,6 @@
   </div>
 </div>
 
-<!-- ЧАТ -->
 <div class="chat-modal" id="chat-modal">
   <div class="modal-box chat-window">
     <div class="modal-header">
@@ -358,7 +357,6 @@
   </div>
 </div>
 
-<!-- ИГРОВОЙ ЭКРАН -->
 <div id="game-screen" class="hidden" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
   <div class="top-bar">
     <button class="icon-btn" onclick="leaveGame()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 10px; padding: 6px;">
@@ -393,7 +391,6 @@
   </div>
 </div>
 
-<!-- УВЕДОМЛЕНИЕ (СМС) -->
 <div class="sms-notification" id="sms-notification">
   <div class="sms-header">
     <div class="sms-title" id="sms-title">Код соперника</div>
@@ -403,7 +400,6 @@
   <div class="sms-hint">Нажмите, чтобы закрыть</div>
 </div>
 
-<!-- ЭКРАН КОНЦА ИГРЫ -->
 <div class="game-over-screen hidden" id="game-over-screen">
   <div class="game-over-content">
     <h2 id="game-over-title">Победа!</h2>
@@ -431,7 +427,7 @@ const state = {
   gameMode: "",
   targetRoomCode: "",
   searchStartTime: 0,
-  pendingRoomId: null, // For matchmaking
+  pendingRoomId: null, 
 
   secretHuman: null, secretBot: null,
   lastMarks: Array(CODE_LEN).fill(""), 
@@ -783,6 +779,11 @@ socket.on('game_start', (data) => {
   closeModal("rematch-modal");
   closeMenu("waiting-screen");
   
+  // ФИКС РАЗМЫТИЯ ПРИ РЕВАНШЕ
+  el.gameOverScreen.classList.add("hidden");
+  el.gameOverScreen.classList.remove("fade-out");
+  document.body.classList.remove("blur-active");
+
   initGameUI();
   if (!data.restart) el.chatHistory.innerHTML = "";
 });
@@ -824,9 +825,7 @@ socket.on('rematch_opponent_accepted', () => {
   document.getElementById("rematch-desc").innerHTML = `<b>${state.opponentName}</b> хочет реванш`;
 });
 
-socket.on('rematch_waiting', () => {
-  // already handled in acceptRematch
-});
+socket.on('rematch_waiting', () => {});
 
 socket.on('rematch_declined', (data) => {
   document.getElementById("rematch-title").textContent = "Отказ";

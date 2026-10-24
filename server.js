@@ -29,6 +29,7 @@ function scoreGuess(guess, secret) {
   for (let i = 0; i < len; i++) {
     if (guess[i] === secret[i]) { marks[i] = "green"; secretLeft[i] = false; guessLeft[i] = false; }
   }
+  // Убрана логика yellow (она больше не отправляется на клиент, но сервер считает правильно)
   for (let i = 0; i < len; i++) {
     if (!guessLeft[i]) continue;
     for (let j = 0; j < len; j++) {
@@ -44,6 +45,10 @@ function generateRoomCode() {
 }
 
 io.on('connection', (socket) => {
+  socket.on('ping_test', () => {
+    socket.emit('pong_test');
+  });
+
   // ==== RANDOM MATCHMAKING ====
   socket.on('find_random', (data) => {
     socket.username = data.username;

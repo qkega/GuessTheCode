@@ -41,14 +41,15 @@
 
   .hidden { display: none !important; }
 
-  /* СТАРЫЕ СТИЛИ */
+  /* TOP BAR */
   .top-bar {
     width: 100%; max-width: 380px; display: flex; justify-content: space-between; align-items: center;
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 8px 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 4px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 4px; gap: 8px;
   }
   .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; }
   .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+  
   .status-container { flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; height: 24px; position: relative; }
   .status-text { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 8px; position: absolute; width: 100%; justify-content: center; animation: textReveal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
   .status-text.human { color: var(--status-human); }
@@ -79,7 +80,7 @@
   .eye-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
   .eye-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
-  .board { display: flex; gap: 8px; width: 100%; max-width: 380px; margin-top: 4px; }
+  .board { display: flex; gap: 10px; width: 100%; max-width: 380px; margin-top: 4px; }
   .cell { flex: 1; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; border-radius: 16px; background: var(--panel); border: 2px solid var(--line); transition: border-color 0.2s, background 0.2s; cursor: pointer; }
   .cell.filled { border-color: var(--muted); transform: scale(1.05); }
   .cell.locked { background: var(--green); border-color: var(--green); color: #000; box-shadow: 0 0 15px var(--green-glow); cursor: default; }
@@ -111,7 +112,8 @@
   .sms-digit.gray { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
   .sms-hint { font-size: 12px; color: var(--muted); font-weight: 700; }
 
-  .chat-modal, .settings-modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+  /* MODALS (Fixed z-index) */
+  .chat-modal, .settings-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
   .chat-modal.open, .settings-modal.open { pointer-events: auto; opacity: 1; }
   .modal-box { width: 92%; max-width: 400px; background: rgba(25, 28, 40, 0.95); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 24px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); transform: scale(0.9); transition: transform 0.3s; }
   .chat-modal.open .modal-box, .settings-modal.open .modal-box { transform: scale(1); }
@@ -133,7 +135,6 @@
   .setting-row select { background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-weight: 700; outline: none; cursor: pointer; }
   .btn-save { background: var(--accent); color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: 900; font-family: inherit; font-size: 16px; cursor: pointer; margin-top: 10px; }
 
-  /* МЕНЮ */
   .menu-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
   .menu-box { background: var(--panel); padding: 24px; border-radius: 24px; border: 1px solid var(--line); width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   .menu-box h2 { margin: 0 0 10px 0; font-size: 22px; text-align: center; font-weight: 900; color: var(--text); }
@@ -146,16 +147,8 @@
   .room-code-display svg { width: 24px; height: 24px; fill: var(--muted); cursor: pointer; transition: 0.2s; }
   .room-code-display svg:hover { fill: var(--accent); }
 
-  /* НОВЫЙ ФУТЕР */
-  .menu-footer {
-    position: absolute; bottom: 20px; left: 0; width: 100%;
-    display: flex; justify-content: center; gap: 12px;
-  }
-  .footer-btn {
-    width: 48px; height: 48px; background: var(--panel); border: 1px solid var(--line);
-    border-radius: 12px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--muted); transition: 0.2s;
-  }
+  .menu-footer { position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 12px; }
+  .footer-btn { width: 48px; height: 48px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); transition: 0.2s; }
   .footer-btn:hover { color: var(--text); border-color: var(--accent); }
   .footer-btn svg { width: 24px; height: 24px; fill: currentColor; }
 
@@ -171,7 +164,7 @@
   .confetti { position: absolute; font-size: 30px; user-select: none; animation: fly 4s linear forwards; opacity: 0; }
   @keyframes fly { 0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(var(--rot)); opacity: 0; } }
 
-  .modal { position: fixed; inset: 0; background: rgba(9, 10, 15, 0.85); display: flex; align-items: center; justify-content: center; z-index: 400; backdrop-filter: blur(8px); transition: opacity 0.3s; }
+  .modal { position: fixed; inset: 0; background: rgba(9, 10, 15, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); transition: opacity 0.3s; }
   .modal.hidden { opacity: 0; pointer-events: none; display: none; }
   .modal-content { background: var(--panel); padding: 24px; border-radius: 20px; width: 90%; max-width: 340px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.6s; }
   .modal-content h2 { margin: 0; font-size: 20px; text-align: center; font-weight: 900; }
@@ -187,7 +180,6 @@
   .spinner { border: 4px solid var(--line); border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
   @keyframes spin { 100% { transform: rotate(360deg); } }
 
-  /* Стили для инпута с кнопкой */
   .input-with-btn { display: flex; gap: 8px; }
   .input-with-btn input { flex: 1; }
   .input-with-btn button { background: var(--line); border: none; border-radius: 12px; padding: 0 16px; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -208,7 +200,7 @@
     <button class="footer-btn" onclick="openSettings()">
       <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
     </button>
-    <button class="footer-btn" title="Донат">
+    <button class="footer-btn" onclick="showSMS('Донат', '<span style=\'font-size:14px;\'>Механика доната скоро появится!</span>')" title="Донат">
       <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
     </button>
     <button class="footer-btn" onclick="openFeedback()" title="Обратная связь">
@@ -223,7 +215,7 @@
     <button class="menu-btn primary" onclick="showCodeInput('random')">Случайный поиск</button>
     <button class="menu-btn green" onclick="showCodeInput('create')">Создать комнату</button>
     <button class="menu-btn" onclick="showJoinInput()">Войти по коду</button>
-    <button class="menu-btn" onclick="closeMenu('online-menu', 'main-menu')">Назад</button>
+    <button class="menu-btn" onclick="closeMenu('online-menu'); openMenu('main-menu');">Назад</button>
   </div>
 </div>
 
@@ -254,6 +246,19 @@
   </div>
 </div>
 
+<!-- ОКНО ПОДТВЕРЖДЕНИЯ СОПЕРНИКА -->
+<div class="modal hidden" id="found-modal">
+  <div class="modal-content">
+    <h2>Соперник найден!</h2>
+    <p id="found-desc">Игрок: <b>...</b></p>
+    <div class="modal-btns">
+      <button class="btn-random" id="btn-found-decline" onclick="declineFound()">Отмена</button>
+      <button class="btn-start" id="btn-found-accept" onclick="acceptFound()">Начать игру</button>
+    </div>
+    <div class="spinner hidden" id="found-spinner" style="margin-top: 10px;"></div>
+  </div>
+</div>
+
 <div class="modal hidden" id="join-screen">
   <div class="modal-content">
     <h2>Вход по коду</h2>
@@ -263,19 +268,7 @@
     </div>
     <div class="modal-btns">
       <button class="btn-random" onclick="cancelToMain()">Отмена</button>
-      <button class="btn-start" id="btn-join-confirm" onclick="submitJoin()">Вход</button>
-    </div>
-  </div>
-</div>
-
-<!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ НАЙДЕННОГО СОПЕРНИКА -->
-<div class="modal hidden" id="found-modal">
-  <div class="modal-content">
-    <h2>Соперник найден!</h2>
-    <p id="found-desc">Игрок: <b>...</b><br>Поиск занял: 0 сек</p>
-    <div class="modal-btns">
-      <button class="btn-random" onclick="cancelFound()">Отмена</button>
-      <button class="btn-start" onclick="acceptFound()">Начать игру</button>
+      <button class="btn-start" onclick="submitJoin()">Вход</button>
     </div>
   </div>
 </div>
@@ -325,10 +318,24 @@
         <span>Цвет интерфейса</span>
         <select id="setting-color" onchange="saveSettings()">
           <option value="#3b82f6">Синий</option>
+          <option value="#2563eb">Темно-синий</option>
+          <option value="#06b6d4">Голубой</option>
+          <option value="#14b8a6">Бирюзовый</option>
           <option value="#10b981">Зеленый</option>
-          <option value="#ec4899">Розовый</option>
+          <option value="#22c55e">Салатовый</option>
+          <option value="#84cc16">Лайм</option>
           <option value="#eab308">Желтый</option>
-          <option value="#8b5cf6">Фиолетовый</option>
+          <option value="#f59e0b">Оранжевый</option>
+          <option value="#f97316">Тыквенный</option>
+          <option value="#ef4444">Красный</option>
+          <option value="#ec4899">Розовый</option>
+          <option value="#f43f5e">Малиновый</option>
+          <option value="#d946ef">Фуксия</option>
+          <option value="#a855f7">Фиолетовый</option>
+          <option value="#8b5cf6">Сиреневый</option>
+          <option value="#6366f1">Индиго</option>
+          <option value="#ffffff">Белый</option>
+          <option value="#9ca3af">Серый</option>
         </select>
       </div>
       <button class="btn-save" onclick="closeSettings()">Сохранить</button>
@@ -354,6 +361,9 @@
 <!-- ИГРОВОЙ ЭКРАН -->
 <div id="game-screen" class="hidden" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
   <div class="top-bar">
+    <button class="icon-btn" onclick="leaveGame()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 10px; padding: 6px;">
+      <svg viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+    </button>
     <button class="icon-btn" onclick="openSettings()">
       <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
     </button>
@@ -362,15 +372,10 @@
       <div class="status-text human" id="status-text">ВАШ ХОД</div>
     </div>
 
-    <div style="display: flex; gap: 4px;">
-      <button class="chat-btn" onclick="openChat()" style="padding: 6px;">
-        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-        <div class="badge hidden" id="chat-badge">0</div>
-      </button>
-      <button class="icon-btn" onclick="leaveGame()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 10px; padding: 6px;">
-        <svg viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
-      </button>
-    </div>
+    <button class="chat-btn" onclick="openChat()" style="padding: 6px;">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      <div class="badge hidden" id="chat-badge">0</div>
+    </button>
   </div>
 
   <div class="my-code-panel">
@@ -426,7 +431,7 @@ const state = {
   gameMode: "",
   targetRoomCode: "",
   searchStartTime: 0,
-  pendingGameStart: null, // Для окна подтверждения соперника
+  pendingRoomId: null, // For matchmaking
 
   secretHuman: null, secretBot: null,
   lastMarks: Array(CODE_LEN).fill(""), 
@@ -484,7 +489,6 @@ function scoreGuess(guess, secret) {
   const marks = Array(CODE_LEN).fill("gray");
   const secretLeft = Array(CODE_LEN).fill(true);
   const guessLeft = Array(CODE_LEN).fill(true);
-
   for (let i = 0; i < CODE_LEN; i++) {
     if (guess[i] === secret[i]) { marks[i] = "green"; secretLeft[i] = false; guessLeft[i] = false; }
   }
@@ -499,9 +503,9 @@ function scoreGuess(guess, secret) {
 
 /* ============ СТАРТОВЫЕ МЕНЮ ============ */
 if (state.myUsername) el.nickInput.value = state.myUsername;
-document.getElementById("setting-difficulty").value = localStorage.getItem("gc_diff") || "hard";
+el.settingDifficulty.value = localStorage.getItem("gc_diff") || "hard";
 const savedColor = localStorage.getItem("gc_color") || "#3b82f6";
-document.getElementById("setting-color").value = savedColor;
+el.settingColor.value = savedColor;
 document.documentElement.style.setProperty('--accent', savedColor);
 
 el.nickInput.addEventListener("input", (e) => {
@@ -604,21 +608,17 @@ async function copyRoomCode() {
   try {
     await navigator.clipboard.writeText(text);
     showSMS("Успех", `<span style="color:var(--green); font-weight:bold; font-size:14px;">Код скопирован</span>`);
-  } catch (e) {
-    showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold; font-size:14px;">Не удалось скопировать</span>`);
-  }
+  } catch (e) {}
 }
 
 async function pasteRoomCode() {
   try {
     const text = await navigator.clipboard.readText();
     document.getElementById("join-code-input").value = text.trim().toUpperCase();
-  } catch (e) {
-    showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold; font-size:14px;">Нет доступа к буферу</span>`);
-  }
+  } catch (e) {}
 }
 
-/* ============ НАСТРОЙКИ И ЧАТ ============ */
+/* ============ НАСТРОЙКИ, ЧАТ, ФИДБЕК ============ */
 function openSettings() { document.body.classList.add("blur-active"); el.settingsModal.classList.add("open"); }
 function closeSettings() { document.body.classList.remove("blur-active"); el.settingsModal.classList.remove("open"); }
 function saveSettings() {
@@ -649,13 +649,11 @@ function sendChatMessage() {
   else { addChatMsg("Вы", text, true); setTimeout(() => addChatMsg("БОТ", "Занятно.", false), 1000); }
 }
 
-/* ============ ОБРАТНАЯ СВЯЗЬ ============ */
 function openFeedback() { openModal("feedback-modal"); }
 async function sendFeedback() {
   const text = document.getElementById("feedback-text").value.trim();
   if (!text) return;
   const time = new Date().toLocaleString("ru-RU");
-  
   try {
     const res = await fetch("/api/feedback", {
       method: "POST",
@@ -674,7 +672,7 @@ async function sendFeedback() {
   }
 }
 
-/* ============ УВЕДОМЛЕНИЯ (СМС) ============ */
+/* ============ СМС УВЕДОМЛЕНИЯ ============ */
 function showSMS(title, contentHtml) {
   el.smsTitle.textContent = title;
   el.smsDigits.innerHTML = contentHtml;
@@ -696,26 +694,68 @@ function showOpponentMove(guess, marks) {
 
 el.smsNotif.addEventListener("click", () => el.smsNotif.classList.remove("show"));
 
-/* ============ ИГРА ============ */
+/* ============ БОТ И ИГРА ============ */
 function startBotGame() {
   const nick = el.nickInput.value.trim();
   if (!/^[a-zA-Zа-яА-Я0-9_-]{3,12}$/.test(nick)) { showSMS("Ошибка", `<span style="color:var(--red); font-weight:bold; font-size:14px;">Ник: 3-12 символов</span>`); return; }
   state.myUsername = nick;
   localStorage.setItem("gc_nick", nick);
-
   closeMenu("main-menu");
   state.isOnline = false;
   state.opponentName = "БОТ";
   state.phase = "humanTurn";
-  
   state.secretBot = randomCode();
   state.secretHuman = randomCode();
-  
   initGameUI();
 }
 
+/* ==== МАТЧМЕЙКИНГ ==== */
 socket.on('waiting_random', () => {});
 
+socket.on('match_found', (data) => {
+  if (waitingTimer) clearInterval(waitingTimer);
+  state.pendingRoomId = data.roomId;
+  
+  const searchTime = Math.floor((Date.now() - state.searchStartTime) / 1000);
+  document.getElementById("found-desc").innerHTML = `Игрок: <b>${data.opponentName}</b><br>Поиск занял: ${searchTime} сек`;
+  
+  document.getElementById("btn-found-accept").disabled = false;
+  document.getElementById("btn-found-decline").disabled = false;
+  document.getElementById("found-spinner").classList.add("hidden");
+  
+  closeMenu("waiting-screen");
+  openModal("found-modal");
+});
+
+function acceptFound() {
+  document.getElementById("btn-found-accept").disabled = true;
+  document.getElementById("btn-found-decline").disabled = true;
+  document.getElementById("found-spinner").classList.remove("hidden");
+  document.getElementById("found-desc").innerHTML += "<br><span style='color:var(--accent)'>Ожидание соперника...</span>";
+  socket.emit('match_accept', { roomId: state.pendingRoomId });
+}
+
+function declineFound() {
+  socket.emit('match_decline', { roomId: state.pendingRoomId });
+  cancelToMain();
+}
+
+socket.on('match_declined', (data) => {
+  showSMS("Отмена", `<span style="font-size:14px;">${data.by} отказался. Ищем другого...</span>`);
+  closeModal("found-modal");
+  openMenu("waiting-screen");
+  document.getElementById("waiting-title").textContent = "Поиск соперника...";
+  document.getElementById("waiting-desc").textContent = "Ожидание...";
+  
+  state.searchStartTime = Date.now();
+  if (waitingTimer) clearInterval(waitingTimer);
+  waitingTimer = setInterval(() => {
+    const secs = Math.floor((Date.now() - state.searchStartTime) / 1000);
+    document.getElementById("waiting-timer").textContent = `${secs} сек`;
+  }, 1000);
+});
+
+/* ==== ИГРА ==== */
 socket.on('room_created', (data) => {
   if (waitingTimer) clearInterval(waitingTimer);
   document.getElementById("waiting-title").textContent = "Комната создана";
@@ -732,53 +772,31 @@ socket.on('err_msg', (msg) => {
 });
 
 socket.on('game_start', (data) => {
-  if (state.gameMode === "random" && !state.pendingGameStart) {
-    // Показываем окно подтверждения
-    state.pendingGameStart = data;
-    const searchTime = Math.floor((Date.now() - state.searchStartTime) / 1000);
-    document.getElementById("found-desc").innerHTML = `Игрок: <b>${data.p1_name === state.myUsername ? data.p2_name : data.p1_name}</b><br>Поиск занял: ${searchTime} сек`;
-    if (waitingTimer) clearInterval(waitingTimer);
-    closeMenu("waiting-screen");
-    openModal("found-modal");
-    return;
-  }
-
-  startOnlineGame(data);
-});
-
-function acceptFound() {
-  closeModal("found-modal");
-  startOnlineGame(state.pendingGameStart);
-  state.pendingGameStart = null;
-}
-
-function cancelFound() {
-  closeModal("found-modal");
-  if (state.pendingGameStart) {
-    socket.emit('leave_game', { roomId: state.pendingGameStart.roomId });
-    state.pendingGameStart = null;
-  }
-  cancelToMain();
-}
-
-function startOnlineGame(data) {
+  state.pendingRoomId = null;
   state.isOnline = true;
   state.roomId = data.roomId;
   state.currentTurn = data.turn;
   state.opponentName = (data.p1_name === state.myUsername) ? data.p2_name : data.p1_name;
   state.phase = "online";
 
+  closeModal("found-modal");
+  closeModal("rematch-modal");
   closeMenu("waiting-screen");
+  
   initGameUI();
-  el.chatHistory.innerHTML = "";
-}
+  if (!data.restart) el.chatHistory.innerHTML = "";
+});
+
+socket.on('new_secret_code', (data) => {
+  state.secretHuman = data.code;
+  renderMyCode();
+});
 
 socket.on('guess_result', (data) => {
   if (data.player === socket.id) {
     processMyGuess(data.guess, data.marks);
   } else {
     showOpponentMove(data.guess, data.marks);
-    // Обновляем статус зеленых цифр в панели "Ваш код"
     for (let i = 0; i < CODE_LEN; i++) {
       if (data.marks[i] === "green") state.humanCodeStatus[i] = "green";
     }
@@ -800,10 +818,14 @@ socket.on('opponent_left', () => {
   setTimeout(() => location.reload(), 3000);
 });
 
-socket.on('rematch_requested', (data) => {
-  // Если мы уже в окне реванша, показываем что соперник тоже хочет
-  document.getElementById("rematch-title").textContent = "Соперник хочет реванш!";
-  document.getElementById("rematch-desc").innerHTML = `<b>${data.from}</b> ждет вашего ответа`;
+/* ==== РЕВАНШ ==== */
+socket.on('rematch_opponent_accepted', () => {
+  document.getElementById("rematch-title").textContent = "Соперник готов!";
+  document.getElementById("rematch-desc").innerHTML = `<b>${state.opponentName}</b> хочет реванш`;
+});
+
+socket.on('rematch_waiting', () => {
+  // already handled in acceptRematch
 });
 
 socket.on('rematch_declined', (data) => {
@@ -821,7 +843,6 @@ socket.on('chat_message', (data) => {
 function initGameUI() {
   closeMenu("main-menu");
   el.gameScreen.classList.remove("hidden");
-  
   state.lastMarks = Array(CODE_LEN).fill("");
   state.lastGuess = null;
   state.locked = Array(CODE_LEN).fill(false);
@@ -903,7 +924,6 @@ function renderBoard() {
   for (let i = 0; i < CODE_LEN; i++) {
     const c = document.createElement("div");
     c.className = "cell";
-    
     if (state.locked[i]) {
       c.classList.add("locked");
       c.textContent = state.lockedDigits[i] ?? "";
@@ -914,7 +934,6 @@ function renderBoard() {
       c.classList.add("fade-gray");
       c.textContent = "•";
     }
-
     if (i === state.cursor && !state.locked[i] && isMyTurn()) {
       c.classList.add("cursor");
     }
@@ -924,26 +943,17 @@ function renderBoard() {
 
 function renderPad() {
   el.pad.innerHTML = "";
-  
-  if (!isMyTurn()) {
-    el.pad.classList.add("waiting");
-  } else {
-    el.pad.classList.remove("waiting");
-  }
+  if (!isMyTurn()) el.pad.classList.add("waiting");
+  else el.pad.classList.remove("waiting");
 
   const addBtn = (text, cls, fn, isDigit = false) => {
     const b = document.createElement("button");
     b.textContent = text;
     if (cls) b.className = cls;
-    
     if (isDigit) {
       const isCursorEmpty = !state.locked[state.cursor] && !state.input[state.cursor];
-      if (isCursorEmpty) {
-          const isTriedInCursor = state.attempts.some(a => a.slot === state.cursor && a.digit === text);
-          if (isTriedInCursor) b.disabled = true;
-      }
+      if (isCursorEmpty && state.attempts.some(a => a.slot === state.cursor && a.digit === text)) b.disabled = true;
     }
-    
     b.addEventListener("click", (e) => { e.preventDefault(); if(!b.disabled) fn(); });
     el.pad.appendChild(b);
     return b;
@@ -953,12 +963,10 @@ function renderPad() {
   addBtn("2", "", () => putDigit("2"), true);
   addBtn("3", "", () => putDigit("3"), true);
   const subBtn = addBtn("✓", "btn-submit", submitGuess);
-  
   addBtn("4", "", () => putDigit("4"), true);
   addBtn("5", "", () => putDigit("5"), true);
   addBtn("6", "", () => putDigit("6"), true);
   addBtn("×", "btn-reset", clearInput);
-
   addBtn("7", "", () => putDigit("7"), true);
   addBtn("8", "", () => putDigit("8"), true);
   addBtn("9", "", () => putDigit("9"), true);
@@ -970,16 +978,13 @@ function renderPad() {
 
 function putDigit(d) {
   if (!isMyTurn()) return;
-  
   let slot = state.cursor;
   for (let k = 0; k < CODE_LEN; k++) {
     const s = (slot + k) % CODE_LEN;
     if (!state.locked[s] && !state.input[s]) { slot = s; break; }
   }
-  
   if (state.locked[slot] || state.input[slot]) return;
   if (state.attempts.some(a => a.slot === slot && a.digit === d)) return;
-  
   state.cursor = slot;
   state.input[slot] = d;
   moveCursorNext();
@@ -1004,7 +1009,6 @@ function moveCursorNext() {
 function processMyGuess(guess, marks) {
   state.lastGuess = guess;
   state.lastMarks = marks;
-
   for (let i = 0; i < CODE_LEN; i++) {
     if (marks[i] === "green") {
       state.locked[i] = true;
@@ -1013,7 +1017,6 @@ function processMyGuess(guess, marks) {
       state.attempts.push({ slot: i, digit: guess[i] });
     }
   }
-  
   state.input = Array(CODE_LEN).fill("");
   state.cursor = 0;
   moveCursorNext();
@@ -1033,9 +1036,7 @@ function submitGuess() {
     const marks = scoreGuess(guess, state.secretBot);
     processMyGuess(guess, marks);
     render();
-
     if (marks.every(m => m === "green")) { triggerGameOver(true, guess); return; }
-
     state.phase = "botTurn";
     updateStatusUI();
     if (botTimer) clearTimeout(botTimer);
@@ -1043,7 +1044,7 @@ function submitGuess() {
   }
 }
 
-/* ============ БОТ ============ */
+/* ==== БОТ ==== */
 let botLockedDigits = Array(CODE_LEN).fill(null);
 
 function botTurn() {
@@ -1082,7 +1083,7 @@ function botTurn() {
   renderPad();
 }
 
-/* ============ КОНЕЦ ИГРЫ ============ */
+/* ==== КОНЕЦ ИГРЫ ==== */
 function triggerGameOver(isWin, secret) {
   state.phase = "over";
   currentStatusPhase = ""; 
@@ -1093,7 +1094,6 @@ function triggerGameOver(isWin, secret) {
 
   setTimeout(() => {
     el.confettiContainer.innerHTML = ""; 
-    
     el.gameOverTitle.textContent = isWin ? "Победа!" : "Вы проиграли";
     el.gameOverTitle.style.color = isWin ? "var(--green)" : "var(--red)";
     
@@ -1117,6 +1117,7 @@ function triggerGameOver(isWin, secret) {
         document.getElementById("rematch-desc").innerHTML = "";
         document.getElementById("rematch-btns").classList.remove("hidden");
         document.getElementById("rematch-spinner").classList.add("hidden");
+        document.getElementById("btn-rematch-accept").disabled = false;
       } else {
         setTimeout(() => { location.reload(); }, 1500);
       }
@@ -1131,11 +1132,11 @@ function acceptRematch() {
   document.getElementById("rematch-desc").innerHTML = `Ожидание <b>${state.opponentName}</b>`;
   document.getElementById("rematch-btns").classList.add("hidden");
   document.getElementById("rematch-spinner").classList.remove("hidden");
-  socket.emit('rematch_request', { roomId: state.roomId });
+  socket.emit('rematch_accept', { roomId: state.roomId });
 }
 
 function declineRematch() {
-  socket.emit('rematch_response', { roomId: state.roomId, accept: false });
+  socket.emit('rematch_decline', { roomId: state.roomId });
   location.reload();
 }
 
@@ -1168,7 +1169,6 @@ el.board.addEventListener("click", (e) => {
   if (!cell || !isMyTurn()) return;
   const index = Array.from(el.board.children).indexOf(cell);
   if (state.locked[index]) return;
-
   if (state.input[index]) { state.input[index] = ""; state.cursor = index; }
   else { state.cursor = index; }
   renderMyCode(); renderBoard(); renderPad();

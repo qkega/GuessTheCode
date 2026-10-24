@@ -148,7 +148,6 @@
   .room-code-display svg { width: 24px; height: 24px; fill: var(--muted); cursor: pointer; transition: 0.2s; }
   .room-code-display svg:hover { fill: var(--accent); }
 
-  /* ФУТЕР ТЕПЕРЬ ВНУТРИ MENU-BOX */
   .menu-footer { display: flex; justify-content: center; gap: 12px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--line); }
   .footer-btn { width: 48px; height: 48px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); transition: 0.2s; }
   .footer-btn:hover { color: var(--text); border-color: var(--accent); }
@@ -198,7 +197,6 @@
     <button class="menu-btn primary" onclick="openOnlineMenu()">Играть по сети</button>
     <button class="menu-btn" onclick="startBotGame()">Играть с ботом</button>
     
-    <!-- Кнопки перенесены внутрь рамки -->
     <div class="menu-footer">
       <button class="footer-btn" onclick="openSettings()">
         <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
@@ -547,7 +545,13 @@ function showCodeInput(mode) {
     inp.addEventListener("click", () => { inp.value = ""; });
     el.modalInputs.appendChild(inp);
   }
-  setTimeout(() => el.modalInputs.children[0].focus(), 100);
+  
+  setTimeout(() => {
+    if(el.modalInputs.children[0]) {
+        el.modalInputs.children[0].focus();
+        el.modalInputs.children[0].select();
+    }
+  }, 50);
 }
 
 function randomizeModal() { Array.from(el.modalInputs.children).forEach(inp => inp.value = randDigit()); }
@@ -558,6 +562,17 @@ function confirmCode() {
   
   state.secretHuman = code;
   closeModal("code-screen");
+
+  if (state.gameMode === "rematch") {
+      socket.emit('rematch_submit_code', { roomId: state.roomId, code: code });
+      openModal("rematch-modal");
+      document.getElementById("rematch-title").textContent = "Ожидание...";
+      document.getElementById("rematch-desc").innerHTML = `Ожидание кода от <b>${state.opponentName}</b>`;
+      document.getElementById("rematch-btns").classList.add("hidden");
+      document.getElementById("rematch-spinner").classList.remove("hidden");
+      return;
+  }
+
   openMenu("waiting-screen");
   document.getElementById("room-code-display").classList.add("hidden");
   document.getElementById("waiting-spinner").classList.remove("hidden");
@@ -788,11 +803,6 @@ socket.on('game_start', (data) => {
   if (!data.restart) el.chatHistory.innerHTML = "";
 });
 
-socket.on('new_secret_code', (data) => {
-  state.secretHuman = data.code;
-  renderMyCode();
-});
-
 socket.on('guess_result', (data) => {
   if (data.player === socket.id) {
     processMyGuess(data.guess, data.marks);
@@ -825,7 +835,33 @@ socket.on('rematch_opponent_accepted', () => {
   document.getElementById("rematch-desc").innerHTML = `<b>${state.opponentName}</b> хочет реванш`;
 });
 
-socket.on('rematch_waiting', () => {});
+socket.on('rematch_ready_for_codes', () => {
+  closeModal("rematch-modal");
+  openModal("code-screen");
+  state.gameMode = "rematch";
+
+  el.modalInputs.innerHTML = "";
+  for (let i = 0; i < CODE_LEN; i++) {
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.maxLength = 1; inp.inputMode = "numeric";
+    inp.addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/[^0-9]/g, "");
+      if (e.target.value && i < CODE_LEN - 1) el.modalInputs.children[i + 1].focus();
+    });
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && !e.target.value && i > 0) el.modalInputs.children[i - 1].focus();
+    });
+    inp.addEventListener("click", () => { inp.value = ""; });
+    el.modalInputs.appendChild(inp);
+  }
+  
+  setTimeout(() => {
+    if(el.modalInputs.children[0]) {
+        el.modalInputs.children[0].focus();
+        el.modalInputs.children[0].select();
+    }
+  }, 50);
+});
 
 socket.on('rematch_declined', (data) => {
   document.getElementById("rematch-title").textContent = "Отказ";
